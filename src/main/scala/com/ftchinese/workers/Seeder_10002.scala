@@ -1,4 +1,4 @@
-package com.ftchinese
+package com.ftchinese.workers
 
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.MysqlDriver
