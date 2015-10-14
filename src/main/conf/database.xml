@@ -1,0 +1,33 @@
+<?xml version = "1.0"?>
+
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <property type="mysql" writable="true">
+        <host>172.27.10.23</host>
+        <port>3306</port>
+        <uname>root</uname>
+        <upswd>FinancialTest</upswd>
+        <dbname>cmstmp01</dbname>
+    </property>
+
+    <property type="mysql">
+        <host>172.27.10.23</host>
+        <port>3306</port>
+        <uname>root</uname>
+        <upswd>FinancialTest</upswd>
+        <dbname>cmstmp01</dbname>
+    </property>
+
+    <property type="mysql">
+        <host>54.255.24.253</host>
+        <port>3306</port>
+        <uname>root</uname>
+        <upswd>FinancialAnalysis-2014</upswd>
+        <dbname>analytic</dbname>
+    </property>
+
+    <property type="hbase">
+        <zookeeper>bjtest6:2181</zookeeper>
+    </property>
+
+</configuration>
