@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 
 /**
  * Get custom email template.
- * Created by wanbo on 2015/10/14.
+ * Created by wanbo on 2015/10/19.
  */
 final class Seeder_20011 extends Seeder with ISeeder {
 
@@ -27,7 +27,7 @@ final class Seeder_20011 extends Seeder with ISeeder {
         try {
             val name: String = seed.getOrElse("name", "").toString
 
-            if (name != "" || name.length > 45)
+            if (name.length < 1 || name.length > 45)
                 throw new EasyException("20001")
 
             _name = name
@@ -76,10 +76,10 @@ final class Seeder_20011 extends Seeder with ISeeder {
 
         try {
             val driver = this.driver.asInstanceOf[MysqlDriver]
-            val conn = driver.getConnector("analytic")
+            val conn = driver.getConnector("conferencedb")
 
 
-            val sql = "SELECT `title`,`ccode`,`desc`,`headimg`,`nav`,`ads`,`rail`,`main_content`,`supporting_content`,`articles`,`buttons`,`prize`,isshare`,`isdownapp` FROM conferencedb.dailymail_info WHERE `name`=%s and isdeleted=0 limit 1;".format(_name)
+            val sql = "SELECT `title`,`ccode`,`desc`,`headimg`,`nav`,`ads`,`rail`,`main_content`,`supporting_content`,`articles`,`buttons`,`prize`,`isshare`,`isdownapp` FROM dailyemail_info WHERE `name`='%s' and isdeleted=0 limit 1;".format(_name)
 
             val ps = conn.prepareStatement(sql)
             val rs = ps.executeQuery()
