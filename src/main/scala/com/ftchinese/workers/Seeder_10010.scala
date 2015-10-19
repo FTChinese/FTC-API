@@ -16,7 +16,7 @@ final class Seeder_10010 extends Seeder with ISeeder {
 
     driver = new MysqlDriver
 
-    private var _id = ""
+    private var _idSet = Set[String]()
 
     private val log = LoggerFactory.getLogger(classOf[Seeder_10010])
 
@@ -25,18 +25,24 @@ final class Seeder_10010 extends Seeder with ISeeder {
         var dataList = List[Map[String, Any]]()
 
         try {
-            val id = seed.getOrElse("id", "").toString
+            val idStr = seed.getOrElse("id", "").toString
 
-            if (id != null && !id.forall(_.isDigit))
+            val idArr = idStr.split(",")
+
+            if(idArr.size > 0) {
+                idArr.foreach(x => {
+                    if(x != "" && x.forall(_.isDigit))
+                        _idSet += x
+                })
+            }
+
+            if(_idSet.size < 1)
                 throw new EasyException("20001")
 
-            if(id != null)
-                _id = id
-
             // Cache
-            val cache_name = this.getClass.getSimpleName + _id
+            val cache_name = this.getClass.getSimpleName + _idSet.hashCode()
 
-            val cacher = new CacheManager(conf = _conf, expire = 600)
+            val cacher = new CacheManager(conf = _conf, expire = 86400)
 
             val cacheData = cacher.cacheData(cache_name)
 
@@ -79,7 +85,7 @@ final class Seeder_10010 extends Seeder with ISeeder {
             val driver = this.driver.asInstanceOf[MysqlDriver]
             val conn = driver.getConnector("cmstmp01")
 
-            val sql = "SELECT c.id, c.headline, c.author_name_cn, c.author_name_en, c.description, p.`type` pic_type, p.piclink pic_link FROM `column` c left join `picture` p on convert(left(c.pic,9) using utf8)=p.id where c.`id` = '%s'".format(_id)
+            val sql = "SELECT c.id, c.headline, c.author_name_cn, c.author_name_en, c.description, p.`type` pic_type, p.piclink pic_link FROM `column` c left join `picture` p on convert(left(c.pic,9) using utf8)=p.id where c.`id` in (%s)".format(_idSet.mkString("'", "','", "'"))
 
             val ps = conn.prepareStatement(sql)
             val rs = ps.executeQuery()
