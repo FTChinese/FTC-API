@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
  */
 final class Seeder_10012 extends Seeder with ISeeder {
 
-    name = "10011"
+    name = "10012"
 
     driver = new MysqlDriver
 
