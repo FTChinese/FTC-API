@@ -50,7 +50,7 @@ final class Seeder_10013 extends Seeder with ISeeder {
             // Cache
             val cache_name = this.getClass.getSimpleName + _idSet.hashCode() + _topNum
 
-            val cacher = new CacheManager(conf = _conf, expire = 0)
+            val cacher = new CacheManager(conf = _conf, expire = 3600)
 
             val cacheData = cacher.cacheData(cache_name)
 
