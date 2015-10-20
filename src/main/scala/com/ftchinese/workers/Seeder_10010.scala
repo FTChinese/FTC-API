@@ -85,7 +85,7 @@ final class Seeder_10010 extends Seeder with ISeeder {
             val driver = this.driver.asInstanceOf[MysqlDriver]
             val conn = driver.getConnector("cmstmp01")
 
-            val sql = "SELECT c.id `columnid`, c.headline, c.author_name_cn, c.author_name_en, c.description, p.`type` pic_type, p.piclink pic_link FROM `column` c left join `picture` p on convert(left(c.pic,9) using utf8)=p.id where c.`id` in (%s)".format(_idSet.mkString("'", "','", "'"))
+            val sql = "SELECT c.id `columnid`, c.headline, c.author_name_cn, c.author_name_en, c.`type`, c.description, p.`type` pic_type, p.piclink pic_link FROM `column` c left join `picture` p on convert(left(c.pic,9) using utf8)=p.id where c.`id` in (%s)".format(_idSet.mkString("'", "','", "'"))
 
             val ps = conn.prepareStatement(sql)
             val rs = ps.executeQuery()
