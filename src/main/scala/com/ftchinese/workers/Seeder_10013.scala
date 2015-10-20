@@ -71,10 +71,10 @@ final class Seeder_10013 extends Seeder with ISeeder {
                     if(columnData.oelement.get("errorcode").get == "0"){
                         val mapData = dataList.map(x => (x.get("column").get, x))
                         dataList = List[Map[String, Any]]()
-                        columnData.odata.foreach(x => {
-                            mapData.foreach(y => {
-                                if(x.getOrElse("id", "") == y._1){
-                                    dataList = dataList :+ x ++ y._2
+                        mapData.foreach(x => {
+                            columnData.odata.foreach(y => {
+                                if(y.getOrElse("columnid", "") == x._1){
+                                    dataList = dataList :+ x._2 ++ y
                                 }
                             })
                         })
@@ -109,11 +109,11 @@ final class Seeder_10013 extends Seeder with ISeeder {
             val driver = this.driver.asInstanceOf[MysqlDriver]
             val conn = driver.getConnector("cmstmp01")
 
-            var sql = ""
+            var sql = "SELECT id,cheadline,cskylineheadline,cauthor,cshortleadbody,clongleadbody,`column`,tag,`pubdate` FROM story where `column` != '' and `pubdate` >= (unix_timestamp() - 86400*80) and `publish_status`='publish' "
             if(_idSet.size > 0) {
-                sql = "SELECT id,cheadline,cauthor,`column`,tag FROM story where `column` != '' and `column` in (%s) order by `pubdate` desc, `fileupdatetime` desc limit %d;".format(_idSet.mkString("'", "','", "'"), _topNum)
+                sql += " and `column` in (%s) order by `pubdate` desc, `fileupdatetime` desc limit %d;".format(_idSet.mkString("'", "','", "'"), _topNum)
             } else {
-                sql = "SELECT id,cheadline,cauthor,`column`,tag FROM story where `column` != '' order by `pubdate` desc, `fileupdatetime` desc limit %d;".format(_topNum)
+                sql += " order by `pubdate` desc, `fileupdatetime` desc limit %d;".format(_topNum)
             }
 
             val ps = conn.prepareStatement(sql)
