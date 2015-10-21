@@ -22,6 +22,8 @@ final class Seeder_11006 extends Seeder with ISeeder {
     private var _pageIndex: Int = 1
     private var _pageSize: Int = 10
 
+    private var _withPic: Boolean = false
+
     private var _pageTotal: Int = 0
     private var _itemTotal: Int = 0
 
@@ -35,7 +37,7 @@ final class Seeder_11006 extends Seeder with ISeeder {
 
             val chaId: String = seed.getOrElse("id", "1").toString
 
-            if (chaId != null && !chaId.forall(_.isDigit))
+            if (chaId == "" || !chaId.forall(_.isDigit))
                 throw new EasyException("20001")
 
             _chanelId = chaId.toInt
@@ -68,9 +70,15 @@ final class Seeder_11006 extends Seeder with ISeeder {
             if(_pageSize < 1)
                 _pageSize = 1
 
+            val withPicStr: String = seed.getOrElse("withpic", "0").toString
+
+            if(withPicStr == "1"){
+                _withPic = true
+            }
+
             // Cache
-            val cache_name = this.getClass.getSimpleName + _chanelId + _pageIndex + _pageSize
-            val cacher = new CacheManager(conf = _conf, expire = 600)
+            val cache_name = this.getClass.getSimpleName + _chanelId + _pageIndex + _pageSize + _withPic
+            val cacher = new CacheManager(conf = _conf, expire = 0)
 
             val cacheData = cacher.cacheData(cache_name)
 
@@ -87,6 +95,28 @@ final class Seeder_11006 extends Seeder with ISeeder {
                 else {
                     val cache_data = new EasyOutput
                     cache_data.odata = dataList
+
+                    if(_withPic){
+                        val sIds = dataList.map(_.getOrElse("id", "").toString).filter(_!="").mkString(",")
+                        val picData = manager.transform("10006", Map(("storyid", sIds)))
+
+                        if(picData.oelement.get("errorcode").get == "0"){
+                            dataList = dataList.map(x => {
+                                val tmpId = x.getOrElse("id", "")
+                                var picMap = Map[String, String]()
+                                picData.odata.foreach(y => {
+                                    if(y.getOrElse("ostoryid", "") == tmpId){
+                                        val otype = y.getOrElse("otype", "").toString.toLowerCase
+                                        if(otype == "other")
+                                            picMap += "smallbutton" -> y.getOrElse("olink", "").toString
+                                        else
+                                            picMap += otype -> y.getOrElse("olink", "").toString
+                                    }
+                                })
+                                x updated("story_pic", picMap)
+                            })
+                        }
+                    }
 
                     fruits.oelement = fruits.oelement.updated("itemtotal", _itemTotal.toString)
                     cache_data.oelement = cache_data.oelement.updated("itemtotal", _itemTotal.toString)
@@ -121,7 +151,7 @@ final class Seeder_11006 extends Seeder with ISeeder {
             val driver = this.driver.asInstanceOf[MysqlDriver]
             val conn = driver.getConnector("cmstmp01")
 
-            val sql = "SELECT k.*,m.`clongleadbody` FROM (SELECT s.`id`, s.`cheadline`, s.`cshortleadbody`, s.`tag`, s.`column`, s.`pubdate` FROM story s, (SELECT id FROM channel_detail c WHERE c.`chaid` IN (%d) AND c.`type` = 1 ORDER BY c.addtime DESC LIMIT %d,%d) b WHERE s.id = b.id AND s.publish_status = 'publish') k LEFT JOIN story_metadata m ON k.id = m.storyid ORDER BY k.pubdate DESC , k.id DESC;".format(_chanelId, (_pageIndex - 1) * _pageSize + 1, _pageSize)
+            val sql = "SELECT k.*,m.`clongleadbody` FROM (SELECT s.`id`, s.`cheadline`, s.`cshortleadbody`, s.`tag`, s.`column`, s.`pubdate`, s.`fileupdatetime` FROM story s, (SELECT id FROM channel_detail c WHERE c.`chaid` IN (%d) AND c.`type` = 1 ORDER BY c.addtime DESC LIMIT %d,%d) b WHERE s.id = b.id AND s.publish_status = 'publish') k LEFT JOIN story_metadata m ON k.id = m.storyid ORDER BY k.pubdate DESC, k.`fileupdatetime` DESC, k.id DESC;".format(_chanelId, (_pageIndex - 1) * _pageSize + 1, _pageSize)
 
             val ps = conn.prepareStatement(sql)
             val rs = ps.executeQuery()
@@ -130,7 +160,7 @@ final class Seeder_11006 extends Seeder with ISeeder {
                 var tmpMap = Map[String, String]()
                 tmpMap = tmpMap + ("id" -> rs.getString(1))
                 tmpMap = tmpMap + ("cheadline" -> rs.getString(2))
-                tmpMap = tmpMap + ("clongleadbody" -> rs.getString(7))
+                tmpMap = tmpMap + ("clongleadbody" -> rs.getString(8))
                 tmpMap = tmpMap + ("cshortleadbody" -> rs.getString(3))
                 tmpMap = tmpMap + ("tag" -> rs.getString(4))
                 tmpMap = tmpMap + ("column" -> rs.getString(5))
