@@ -94,7 +94,6 @@ final class Seeder_11006 extends Seeder with ISeeder {
                     throw new EasyException("20100")
                 else {
                     val cache_data = new EasyOutput
-                    cache_data.odata = dataList
 
                     if(_withPic){
                         val sIds = dataList.map(_.getOrElse("id", "").toString).filter(_!="").mkString(",")
@@ -117,6 +116,8 @@ final class Seeder_11006 extends Seeder with ISeeder {
                             })
                         }
                     }
+
+                    cache_data.odata = dataList
 
                     fruits.oelement = fruits.oelement.updated("itemtotal", _itemTotal.toString)
                     cache_data.oelement = cache_data.oelement.updated("itemtotal", _itemTotal.toString)
