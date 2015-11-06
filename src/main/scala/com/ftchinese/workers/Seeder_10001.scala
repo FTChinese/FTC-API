@@ -29,6 +29,8 @@ final class Seeder_10001 extends Seeder with ISeeder {
 
         try {
 
+            val startRunTime = System.currentTimeMillis()
+
             val num = seed.getOrElse("num", "10").toString
             if (num == null || !num.forall(_.isDigit)){
                 _topNum = 10
@@ -93,7 +95,7 @@ final class Seeder_10001 extends Seeder with ISeeder {
             }
             cacher.close()
 
-            fruits.oelement = fruits.oelement.updated("errorcode", "0")
+            fruits.oelement = fruits.oelement.updated("errorcode", "0").+("duration" -> (System.currentTimeMillis() - startRunTime).toString)
             fruits.odata = dataList
         } catch {
             case ee: EasyException =>
