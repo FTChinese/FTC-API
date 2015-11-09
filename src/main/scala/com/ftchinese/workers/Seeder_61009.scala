@@ -46,22 +46,27 @@ final class Seeder_61009 extends Seeder with ISeeder {
             val cacher = new CacheManager(conf = _conf, expire = 21600)
             val cacheData = cacher.cacheData(cache_name)
 
-            // todo: Lock multiple threads, keep only one thread to update cache at the same time.
+            if (cacheData != null && (cacheData.oelement.get("errorcode").get == "0" || cacheData.oelement.get("errorcode").get == "20101") && !isUpdateCache) {
 
-            if (cacheData != null && cacheData.oelement.get("errorcode").get == "0" && !isUpdateCache) {
+                if(cacheData.oelement.getOrElse("errorcode", "-1") == "20101") {
+                    throw new EasyException("20101")
+                }
+
                 dataList = cacheData.odata
                 fruits.oelement = fruits.oelement + ("fromcache" -> "true") + ("ttl" -> cacher.ttl.toString)
             } else {
 
-                log.info("----------- Ready to update cache.")
+                //log.info("----------- Ready to update cache.")
 
                 val t = new Thread(){
                     override def run(): Unit = {
                         try {
 
+                            Thread.sleep(30000)
+
                             updateCache(cacher, cache_name)
 
-                            log.info("----------- Cache update successful.")
+                            //log.info("----------- Cache update successful.")
                         } catch {
                             case e: Exception =>
                                 log.error("Cache update exception:", e)
@@ -70,6 +75,13 @@ final class Seeder_61009 extends Seeder with ISeeder {
                 }
 
                 t.start()
+
+                // Write a cache data as the lock which can prevent more threads to update cache.
+                val cache_data = new EasyOutput
+                cache_data.odata = List[Map[String, Any]]()
+
+                cache_data.oelement = cache_data.oelement.updated("errorcode", "20101")
+                cacher.cacheData(cache_name, cache_data)
 
                 throw new EasyException("20101")
             }
