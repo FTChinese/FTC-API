@@ -27,6 +27,8 @@ final class Seeder_61009 extends Seeder with ISeeder {
 
         var dataList = List[Map[String, Any]]()
 
+        val startRunTime = System.currentTimeMillis()
+
         try {
 
             val uuId = seed.getOrElse("uuid", "").toString
@@ -41,39 +43,43 @@ final class Seeder_61009 extends Seeder with ISeeder {
             // Cache
             val cache_name = this.getClass.getSimpleName + _uuId + _cookieId
 
-            val cacher = new CacheManager(conf = _conf, expire = 3600)
+            val cacher = new CacheManager(conf = _conf, expire = 21600)
             val cacheData = cacher.cacheData(cache_name)
+
+            // todo: Lock multiple threads, keep only one thread to update cache at the same time.
 
             if (cacheData != null && cacheData.oelement.get("errorcode").get == "0" && !isUpdateCache) {
                 dataList = cacheData.odata
                 fruits.oelement = fruits.oelement + ("fromcache" -> "true") + ("ttl" -> cacher.ttl.toString)
-                if(cacher.ttl < 0){
-                    log.info("----------- Ready to update cache.")
-                    log.info("----------- ttl: " + cacher.ttl)
-                    new Runnable {
-                        override def run(): Unit = {
-                            try {
-
-                                updateCache(cacher, cache_name)
-
-                                log.info("----------- Cache update successful.")
-                            } catch {
-                                case e: Exception =>
-                                    log.error("Cache update exception:", e)
-                            }
-                        }
-                    }.run()
-                }
             } else {
-                dataList = updateCache(cacher, cache_name)
+
+                log.info("----------- Ready to update cache.")
+
+                val t = new Thread(){
+                    override def run(): Unit = {
+                        try {
+
+                            updateCache(cacher, cache_name)
+
+                            log.info("----------- Cache update successful.")
+                        } catch {
+                            case e: Exception =>
+                                log.error("Cache update exception:", e)
+                        }
+                    }
+                }
+
+                t.start()
+
+                throw new EasyException("20101")
             }
             cacher.close()
 
-            fruits.oelement = fruits.oelement.updated("errorcode", "0")
+            fruits.oelement = fruits.oelement.updated("errorcode", "0").+("duration" -> (System.currentTimeMillis() - startRunTime).toString)
             fruits.odata = util.Random.shuffle(dataList).slice(0, 10)
         } catch {
             case ee: EasyException =>
-                fruits.oelement = fruits.oelement.updated("errorcode", ee.getCode)
+                fruits.oelement = fruits.oelement.updated("errorcode", ee.getCode).+("duration" -> (System.currentTimeMillis() - startRunTime).toString)
             case e: Exception =>
                 log.error("Seeder has exception:", e)
                 fruits.oelement = fruits.oelement.updated("errorcode", "-1")
