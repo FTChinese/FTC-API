@@ -62,8 +62,6 @@ final class Seeder_61009 extends Seeder with ISeeder {
                     override def run(): Unit = {
                         try {
 
-                            Thread.sleep(30000)
-
                             updateCache(cacher, cache_name)
 
                             //log.info("----------- Cache update successful.")
