@@ -1,5 +1,6 @@
 package com.ftchinese.workers
 
+import com.ftchinese.utils.Utils
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.MysqlDriver
 import com.wanbo.easyapi.server.lib.{EasyException, EasyOutput, ISeeder, Seeder}
@@ -78,9 +79,9 @@ final class Seeder_10001 extends Seeder with ISeeder {
                                     if (y.getOrElse("ostoryid", "") == tmpId) {
                                         val otype = y.getOrElse("otype", "").toString.toLowerCase
                                         if (otype == "other")
-                                            picMap += "smallbutton" -> y.getOrElse("olink", "").toString
+                                            picMap += "smallbutton" -> Utils.formatRealImgUrl(y.getOrElse("olink", "").toString)
                                         else
-                                            picMap += otype -> y.getOrElse("olink", "").toString
+                                            picMap += otype -> Utils.formatRealImgUrl(y.getOrElse("olink", "").toString)
                                     }
                                 })
                                 x updated("story_pic", picMap)
