@@ -18,8 +18,7 @@ final class Seeder_61009 extends Seeder with ISeeder {
 
     driver = new HBaseDriver
 
-    private var _uuId = ""
-    private var _cookieId = ""
+    private var _primeKey = ""
 
     private val log = LoggerFactory.getLogger(classOf[Seeder_61009])
 
@@ -37,11 +36,13 @@ final class Seeder_61009 extends Seeder with ISeeder {
             if(uuId == "" && cookieId == "")
                 throw new EasyException("20001")
 
-            _uuId = uuId
-            _cookieId = cookieId
+            if(uuId == "")
+                _primeKey = cookieId
+            else
+                _primeKey = uuId
 
             // Cache
-            val cache_name = this.getClass.getSimpleName + _uuId + _cookieId
+            val cache_name = this.getClass.getSimpleName + _primeKey
 
             val cacher = new CacheManager(conf = _conf, expire = 21600)
             val cacheData = cacher.cacheData(cache_name)
@@ -56,7 +57,7 @@ final class Seeder_61009 extends Seeder with ISeeder {
                 fruits.oelement = fruits.oelement + ("fromcache" -> "true") + ("ttl" -> cacher.ttl.toString)
             } else {
 
-                //log.info("----------- Ready to update cache.")
+                log.info("----------- Ready to update cache.")
 
                 val t = new Thread(){
                     override def run(): Unit = {
@@ -64,7 +65,7 @@ final class Seeder_61009 extends Seeder with ISeeder {
 
                             updateCache(cacher, cache_name)
 
-                            //log.info("----------- Cache update successful.")
+                            log.info("----------- Cache update successful.")
                         } catch {
                             case e: Exception =>
                                 log.error("Cache update exception:", e)
@@ -79,7 +80,7 @@ final class Seeder_61009 extends Seeder with ISeeder {
                 cache_data.odata = List[Map[String, Any]]()
 
                 cache_data.oelement = cache_data.oelement.updated("errorcode", "20101")
-                cacher.cacheData(cache_name, cache_data)
+                cacher.cacheData(cache_name, cache_data, 10)
 
                 throw new EasyException("20101")
             }
@@ -142,18 +143,12 @@ final class Seeder_61009 extends Seeder with ISeeder {
             scan.addColumn(Bytes.toBytes("c"), Bytes.toBytes("cheadline"))
             scan.addColumn(Bytes.toBytes("c"), Bytes.toBytes("rating"))
 
-            log.info("Query ---------- uuid:" + _uuId)
-            log.info("Query ---------- cookieid:" + _cookieId)
+            log.info("Query ---------- primeKey:" + _primeKey)
 
-
-            if (_uuId != null && _uuId != "") {
-                scan.setStartRow(Bytes.toBytes(_uuId))
-                scan.setFilter(new PrefixFilter(Bytes.toBytes(_uuId)))
-                scan.setStopRow(Bytes.toBytes(_uuId + 'Z'))
-            } else if(_cookieId != null && _cookieId != "") {
-                scan.setStartRow(Bytes.toBytes(_cookieId))
-                scan.setFilter(new PrefixFilter(Bytes.toBytes(_cookieId)))
-                scan.setStopRow(Bytes.toBytes(_cookieId + 'Z'))
+            if(_primeKey != null && _primeKey != "") {
+                scan.setStartRow(Bytes.toBytes(_primeKey))
+                scan.setFilter(new PrefixFilter(Bytes.toBytes(_primeKey)))
+                scan.setStopRow(Bytes.toBytes(_primeKey + 'Z'))
             }
 
             log.info("Start row ------:" + new String(scan.getStartRow))
@@ -170,7 +165,7 @@ final class Seeder_61009 extends Seeder with ISeeder {
 
                 log.info("Row key ------:" + rowKey)
 
-                if((_uuId != "" && _uuId == id) || (_cookieId != "" && _cookieId == id)) {
+                if(_primeKey == id) {
 
                     val s = result.getValue(Bytes.toBytes("c"), Bytes.toBytes("storyid"))
                     val c = result.getValue(Bytes.toBytes("c"), Bytes.toBytes("cheadline"))
