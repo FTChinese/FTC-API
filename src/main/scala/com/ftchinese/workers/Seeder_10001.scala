@@ -117,7 +117,7 @@ final class Seeder_10001 extends Seeder with ISeeder {
             val driver = this.driver.asInstanceOf[MysqlDriver]
             val conn = driver.getConnector("cmstmp01")
 
-            val sql = "select id,cheadline,cskylineheadline,cskylinetext,clongleadbody,cshortleadbody,cbyline_description,cauthor,eheadline, eskylineheadline, eskylinetext, elongleadbody, eshortleadbody, ebyline_description, eauthor,tag,genre,topic,`column`,priority,pubdate,from_unixtime(pubdate,'%Y%m%d') orderdate  from story where `publish_status` = 'publish' order by orderdate desc,`priority`,`fileupdatetime` desc limit " + _topNum
+            val sql = "select id,cheadline,cskylineheadline,cskylinetext,clongleadbody,cshortleadbody,cbyline_description,cauthor,eheadline, eskylineheadline, eskylinetext, elongleadbody, eshortleadbody, ebyline_description, eauthor,tag,genre,topic,`column`,priority,pubdate,last_publish_time,from_unixtime(pubdate,'%Y%m%d') orderdate  from story where `publish_status` = 'publish' order by orderdate desc,`priority`,`fileupdatetime` desc limit " + _topNum
 
             val ps = conn.prepareStatement(sql)
             val rs = ps.executeQuery()
