@@ -67,6 +67,8 @@ final class Seeder_61009 extends Seeder with ISeeder {
 
                             log.info("----------- Cache update successful.")
                         } catch {
+                            case ee: EasyException =>
+                                log.warn("Cache update exception [" + ee.getCode + "]:", ee)
                             case e: Exception =>
                                 log.error("Cache update exception:", e)
                         }
