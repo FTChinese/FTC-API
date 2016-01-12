@@ -2,7 +2,8 @@ package com.ftchinese.workers
 
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.HBaseDriver
-import com.wanbo.easyapi.server.lib.{EasyException, EasyOutput, ISeeder, Seeder}
+import com.wanbo.easyapi.server.lib._
+import com.wanbo.easyapi.server.messages.CacheUpdate
 import org.apache.hadoop.hbase.client.{HTable, Scan}
 import org.apache.hadoop.hbase.filter.PrefixFilter
 import org.apache.hadoop.hbase.util.Bytes
@@ -59,23 +60,31 @@ final class Seeder_61009 extends Seeder with ISeeder {
 
                 log.info("----------- Ready to update cache.")
 
-                val t = new Thread(){
-                    override def run(): Unit = {
-                        try {
-
-                            updateCache(cacher, cache_name)
-
-                            log.info("----------- Cache update successful.")
-                        } catch {
-                            case ee: EasyException =>
-                                log.warn("Cache update exception [" + ee.getCode + "]:", ee)
-                            case e: Exception =>
-                                log.error("Cache update exception:", e)
-                        }
-                    }
+                if(isUpdateCache) {
+                    updateCache(cacher, cache_name)
+                } else {
+                    MessageQ.push("UpdateCache", CacheUpdate(name, seed))
                 }
 
-                t.start()
+
+
+//                val t = new Thread(){
+//                    override def run(): Unit = {
+//                        try {
+//
+//                            updateCache(cacher, cache_name)
+//
+//                            log.info("----------- Cache update successful.")
+//                        } catch {
+//                            case ee: EasyException =>
+//                                log.warn("Cache update exception [" + ee.getCode + "]:", ee)
+//                            case e: Exception =>
+//                                log.error("Cache update exception:", e)
+//                        }
+//                    }
+//                }
+//
+//                t.start()
 
                 // Write a cache data as the lock which can prevent more threads to update cache.
                 val cache_data = new EasyOutput
