@@ -64,6 +64,15 @@ final class Seeder_61009 extends Seeder with ISeeder {
                     updateCache(cacher, cache_name)
                 } else {
                     MessageQ.push("UpdateCache", CacheUpdate(name, seed))
+
+                    // Write a cache data as the lock which can prevent more threads to update cache.
+                    val cache_data = new EasyOutput
+                    cache_data.odata = List[Map[String, Any]]()
+
+                    cache_data.oelement = cache_data.oelement.updated("errorcode", "20101")
+                    cacher.cacheData(cache_name, cache_data, 10)
+
+                    throw new EasyException("20101")
                 }
 
 
@@ -86,14 +95,7 @@ final class Seeder_61009 extends Seeder with ISeeder {
 //
 //                t.start()
 
-                // Write a cache data as the lock which can prevent more threads to update cache.
-                val cache_data = new EasyOutput
-                cache_data.odata = List[Map[String, Any]]()
 
-                cache_data.oelement = cache_data.oelement.updated("errorcode", "20101")
-                cacher.cacheData(cache_name, cache_data, 10)
-
-                throw new EasyException("20101")
             }
             cacher.close()
 
