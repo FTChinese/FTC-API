@@ -71,6 +71,7 @@ final class Seeder_61001 extends Seeder with ISeeder {
             cacher.close()
 
             fruits.oelement = fruits.oelement.updated("errorcode", "0")
+            fruits.odata = List[Map[String, Any]]()
         } catch {
             case ee: EasyException =>
                 fruits.oelement = fruits.oelement.updated("errorcode", ee.getCode)
