@@ -24,7 +24,7 @@ final class Seeder_61001 extends Seeder with ISeeder {
 
     override def onHandle(seed: Map[String, Any]): EasyOutput = {
 
-        var uuid = ""
+        var dataList = List[Map[String, Any]]()
 
         try {
 
@@ -47,8 +47,8 @@ final class Seeder_61001 extends Seeder with ISeeder {
                     throw new EasyException("20101")
                 }
 
-                uuid = cacheData.oelement.getOrElse("uuid", "")
-                fruits.oelement = fruits.oelement + ("uuid" -> uuid) + ("fromcache" -> "true") + ("ttl" -> cacher.ttl.toString)
+                dataList = cacheData.odata
+                fruits.oelement = fruits.oelement + ("fromcache" -> "true") + ("ttl" -> cacher.ttl.toString)
             } else {
 
                 if(isUpdateCache) {
@@ -71,7 +71,7 @@ final class Seeder_61001 extends Seeder with ISeeder {
             cacher.close()
 
             fruits.oelement = fruits.oelement.updated("errorcode", "0")
-            fruits.odata = List[Map[String, Any]]()
+            fruits.odata = dataList
         } catch {
             case ee: EasyException =>
                 fruits.oelement = fruits.oelement.updated("errorcode", ee.getCode)
@@ -84,7 +84,9 @@ final class Seeder_61001 extends Seeder with ISeeder {
         fruits
     }
 
-    private def updateCache(cacheManager: CacheManager, cache_name: String): String ={
+    private def updateCache(cacheManager: CacheManager, cache_name: String): List[Map[String, Any]] ={
+
+        var dataList = List[Map[String, Any]]()
 
         val uuid = onDBHandle()
 
@@ -92,13 +94,16 @@ final class Seeder_61001 extends Seeder with ISeeder {
             throw new EasyException("20100")
         else {
             val cache_data = new EasyOutput
-            cache_data.odata = List[Map[String, Any]]()
 
-            cache_data.oelement = cache_data.oelement.updated("errorcode", "0").updated("uuid", uuid)
+            dataList = dataList :+ Map("uuid" -> uuid)
+
+            cache_data.odata = dataList
+
+            cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
             cacheManager.cacheData(cache_name, cache_data)
         }
 
-        uuid
+        dataList
     }
 
     override protected def onDBHandle(): String = {
