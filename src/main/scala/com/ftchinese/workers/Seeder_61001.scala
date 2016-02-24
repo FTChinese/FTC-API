@@ -2,14 +2,14 @@ package com.ftchinese.workers
 
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.HBaseDriver
-import com.wanbo.easyapi.server.lib.{EasyException, EasyOutput, ISeeder, Seeder}
-import org.apache.hadoop.hbase.client.{HTable, Scan}
-import org.apache.hadoop.hbase.filter.PrefixFilter
+import com.wanbo.easyapi.server.lib._
+import com.wanbo.easyapi.server.messages.CacheUpdate
+import org.apache.hadoop.hbase.client.{Get, HTable}
 import org.apache.hadoop.hbase.util.Bytes
 import org.slf4j.LoggerFactory
 
 /**
- * (Undefined)
+ * Get uuid by cookieId.
  * Created by wanbo on 2015/4/17.
  */
 final class Seeder_61001 extends Seeder with ISeeder {
@@ -18,59 +18,59 @@ final class Seeder_61001 extends Seeder with ISeeder {
 
     driver = new HBaseDriver
 
-    private var _uuId = ""
     private var _cookieId = ""
 
     private val log = LoggerFactory.getLogger(classOf[Seeder_61001])
 
     override def onHandle(seed: Map[String, Any]): EasyOutput = {
 
-        var dataList = List[Map[String, Any]]()
+        var uuid = ""
 
         try {
 
-            val uuId = seed.getOrElse("uuid", "").toString
             val cookieId = seed.getOrElse("cookieid", "").toString
 
-            if(uuId == "" && cookieId == "")
+            if(cookieId == "")
                 throw new EasyException("20001")
 
-            _uuId = uuId
             _cookieId = cookieId
 
             // Cache
-            val cache_name = this.getClass.getSimpleName + _uuId + _cookieId
+            val cache_name = this.getClass.getSimpleName + _cookieId
 
             val cacher = new CacheManager(conf = _conf, expire = 3600)
             val cacheData = cacher.cacheData(cache_name)
 
-            if (cacheData != null && cacheData.oelement.get("errorcode").get == "0" && !isUpdateCache) {
-                dataList = cacheData.odata
-                fruits.oelement = fruits.oelement + ("fromcache" -> "true") + ("ttl" -> cacher.ttl.toString)
-                if(cacher.ttl < 0){
-                    log.info("----------- Ready to update cache.")
-                    log.info("----------- ttl: " + cacher.ttl)
-                    new Runnable {
-                        override def run(): Unit = {
-                            try {
+            if (cacheData != null && (cacheData.oelement.get("errorcode").get == "0" || cacheData.oelement.get("errorcode").get == "20101") && !isUpdateCache) {
 
-                                updateCache(cacher, cache_name)
-
-                                log.info("----------- Cache update successful.")
-                            } catch {
-                                case e: Exception =>
-                                    log.error("Cache update exception:", e)
-                            }
-                        }
-                    }.run()
+                if(cacheData.oelement.getOrElse("errorcode", "-1") == "20101") {
+                    throw new EasyException("20101")
                 }
+
+                uuid = cacheData.oelement.getOrElse("uuid", "")
+                fruits.oelement = fruits.oelement + ("uuid" -> uuid) + ("fromcache" -> "true") + ("ttl" -> cacher.ttl.toString)
             } else {
-                dataList = updateCache(cacher, cache_name)
+
+                if(isUpdateCache) {
+                    updateCache(cacher, cache_name)
+                } else {
+                    MessageQ.push("UpdateCache", CacheUpdate(name, seed))
+
+                    // Write a cache data as the lock which can prevent more threads to update cache.
+                    val cache_data = new EasyOutput
+                    cache_data.odata = List[Map[String, Any]]()
+
+                    cache_data.oelement = cache_data.oelement.updated("errorcode", "20101")
+                    cacher.cacheData(cache_name, cache_data, 10)
+
+                    throw new EasyException("20101")
+                }
+
             }
+
             cacher.close()
 
             fruits.oelement = fruits.oelement.updated("errorcode", "0")
-            fruits.odata = dataList
         } catch {
             case ee: EasyException =>
                 fruits.oelement = fruits.oelement.updated("errorcode", ee.getCode)
@@ -83,97 +83,41 @@ final class Seeder_61001 extends Seeder with ISeeder {
         fruits
     }
 
-    private def updateCache(cacheManager: CacheManager, cache_name: String): List[Map[String, Any]] ={
+    private def updateCache(cacheManager: CacheManager, cache_name: String): String ={
 
-        var dataList = List[Map[String, Any]]()
+        val uuid = onDBHandle()
 
-        val data = onDBHandle()
-
-        if (data.size < 1)
+        if (uuid == "")
             throw new EasyException("20100")
         else {
             val cache_data = new EasyOutput
             cache_data.odata = List[Map[String, Any]]()
 
-            val sortData = data.sortBy(x => x._3)(Ordering.Double.reverse)
-            sortData.slice(0, 30).foreach(x => {
-                var obj = Map[String, Any]()
-                obj = obj + ("storyid" -> x._1.reverse.padTo(9, 0).reverse.mkString)
-                obj = obj + ("cheadline" -> x._2)
-                dataList = dataList :+ obj
-
-                cache_data.odata = cache_data.odata :+ obj
-            })
-            cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
+            cache_data.oelement = cache_data.oelement.updated("errorcode", "0").updated("uuid", uuid)
             cacheManager.cacheData(cache_name, cache_data)
         }
 
-        dataList
+        uuid
     }
 
-    override protected def onDBHandle(): List[(String, String, Double)] = {
-        var dataList = List[(String, String, Double)]()
+    override protected def onDBHandle(): String = {
+        var uuid = ""
 
         try {
 
             val driver = this.driver.asInstanceOf[HBaseDriver]
+            val table = new HTable(driver.getHConf, Bytes.toBytes("user_cookieids"))
 
-            val table = new HTable(driver.getHConf, Bytes.toBytes("user_recommend_stories"))
-
-            val scan = new Scan()
-            scan.addFamily(Bytes.toBytes("c"))
-            scan.addColumn(Bytes.toBytes("c"), Bytes.toBytes("storyid"))
-            scan.addColumn(Bytes.toBytes("c"), Bytes.toBytes("cheadline"))
-            scan.addColumn(Bytes.toBytes("c"), Bytes.toBytes("rating"))
-
-            log.info("Query ---------- uuid:" + _uuId)
             log.info("Query ---------- cookieid:" + _cookieId)
 
+            val get = new Get(Bytes.toBytes(_cookieId))
 
-            if (_uuId != null && _uuId != "") {
-                scan.setStartRow(Bytes.toBytes(_uuId))
-                scan.setFilter(new PrefixFilter(Bytes.toBytes(_uuId)))
-                scan.setStopRow(Bytes.toBytes(_uuId + 'Z'))
-            } else if(_cookieId != null && _cookieId != "") {
-                scan.setStartRow(Bytes.toBytes(_cookieId))
-                scan.setFilter(new PrefixFilter(Bytes.toBytes(_cookieId)))
-                scan.setStopRow(Bytes.toBytes(_cookieId + 'Z'))
-            }
+            val result = table.get(get)
 
-            log.info("Start row ------:" + new String(scan.getStartRow))
-            log.info("Stop row ------:" + new String(scan.getStopRow))
+            val uuidBytes = result.getValue(Bytes.toBytes("c"), Bytes.toBytes("uuid"))
 
-            val retScanner = table.getScanner(scan)
-
-            var result = retScanner.next()
-            while (result != null) {
-
-                val rowKey = new String(result.getRow)
-                val fields = rowKey.split("#")
-                val id = fields(0)
-
-                log.info("Row key ------:" + rowKey)
-
-                if((_uuId != "" && _uuId == id) || (_cookieId != "" && _cookieId == id)) {
-
-                    val s = result.getValue(Bytes.toBytes("c"), Bytes.toBytes("storyid"))
-                    val c = result.getValue(Bytes.toBytes("c"), Bytes.toBytes("cheadline"))
-                    val r = result.getValue(Bytes.toBytes("c"), Bytes.toBytes("rating"))
-
-                    if (s != null && c != null && r != null) {
-                        var rating: Double = 0
-                        try {
-                            rating = new String(r).toDouble
-                        } catch {
-                            case e: Exception =>
-                            // Ignore
-                        }
-                        dataList = dataList :+(new String(s), new String(c), rating)
-                    }
-                }
-
-                result = retScanner.next()
-            }
+            if(uuidBytes != null)
+                uuid = new String(uuidBytes)
 
             table.close()
         } catch {
@@ -181,6 +125,6 @@ final class Seeder_61001 extends Seeder with ISeeder {
                 throw e
         }
 
-        dataList
+        uuid
     }
 }
