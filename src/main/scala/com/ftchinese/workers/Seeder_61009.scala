@@ -37,9 +37,21 @@ final class Seeder_61009 extends Seeder with ISeeder {
             if(uuId == "" && cookieId == "")
                 throw new EasyException("20001")
 
-            if(uuId == "")
-                _primeKey = cookieId
-            else
+            if(uuId == "") {
+
+                // Get uuid By cookieId.
+                val uidData = manager.transform("61001", Map("cookieid" -> cookieId))
+
+                if (uidData.oelement.get("errorcode").get == "0") {
+                    val tmpUUID = uidData.odata.last.getOrElse("uuid", "").toString
+                    if(tmpUUID != "")
+                        _primeKey = tmpUUID
+                    else
+                        _primeKey = cookieId
+                } else {
+                    _primeKey = cookieId
+                }
+            } else
                 _primeKey = uuId
 
             // Cache
@@ -74,27 +86,6 @@ final class Seeder_61009 extends Seeder with ISeeder {
 
                     throw new EasyException("20101")
                 }
-
-
-
-//                val t = new Thread(){
-//                    override def run(): Unit = {
-//                        try {
-//
-//                            updateCache(cacher, cache_name)
-//
-//                            log.info("----------- Cache update successful.")
-//                        } catch {
-//                            case ee: EasyException =>
-//                                log.warn("Cache update exception [" + ee.getCode + "]:", ee)
-//                            case e: Exception =>
-//                                log.error("Cache update exception:", e)
-//                        }
-//                    }
-//                }
-//
-//                t.start()
-
 
             }
             cacher.close()
