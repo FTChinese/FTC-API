@@ -6,7 +6,7 @@
 
     <groupId>com.ftchinese</groupId>
     <artifactId>ftc-api</artifactId>
-    <version>1.0.21-SNAPSHOT</version>
+    <version>1.0.22-SNAPSHOT</version>
 
     <developers>
         <developer>
@@ -19,7 +19,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scala.version>2.10.4</scala.version>
-        <easyapi.version>1.0.24-SNAPSHOT</easyapi.version>
+        <easyapi.version>1.0.25-SNAPSHOT</easyapi.version>
         <file_encoding>UTF-8</file_encoding>
     </properties>
 
