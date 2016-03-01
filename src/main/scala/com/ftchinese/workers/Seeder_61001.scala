@@ -52,8 +52,16 @@ final class Seeder_61001 extends Seeder with ISeeder {
             } else {
 
                 if(isUpdateCache) {
-                    updateCache(cacher, cache_name)
+
+                    if(cacheData != null && cacheData.oelement.getOrElse("errorcode", "-1") == "0" && cacheData.oelement.getOrElse("ttl", "-1").toInt > 10){
+                        log.info("----------- No need to update cache, because expiry time more than 10s.")
+                    } else {
+                        log.info("----------- Ready to update cache.")
+                        updateCache(cacher, cache_name)
+                    }
+
                 } else {
+                    log.info("----------- Push a CacheUpdate message to queue.")
                     MessageQ.push("UpdateCache", CacheUpdate(name, seed))
 
                     // Write a cache data as the lock which can prevent more threads to update cache.
