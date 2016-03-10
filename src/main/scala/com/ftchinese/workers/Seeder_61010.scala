@@ -32,12 +32,24 @@ final class Seeder_61010 extends Seeder with ISeeder {
             val uuId = seed.getOrElse("uuid", "").toString
             val cookieId = seed.getOrElse("cookieid", "").toString
 
-            if(uuId == "" && cookieId == "")
+            if (uuId == "" && cookieId == "")
                 throw new EasyException("20001")
 
-            if(uuId == "")
-                _primeKey = cookieId
-            else
+            if (uuId == "") {
+
+                // Get uuid By cookieId.
+                val uidData = manager.transform("61001", Map("cookieid" -> cookieId))
+
+                if (uidData.oelement.get("errorcode").get == "0") {
+                    val tmpUUID = uidData.odata.last.getOrElse("uuid", "").toString
+                    if (tmpUUID != "")
+                        _primeKey = tmpUUID
+                    else
+                        _primeKey = cookieId
+                } else {
+                    _primeKey = cookieId
+                }
+            } else
                 _primeKey = uuId
 
             val storyId = seed.getOrElse("storyid", "").toString
