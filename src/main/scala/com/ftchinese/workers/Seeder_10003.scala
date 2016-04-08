@@ -104,7 +104,7 @@ final class Seeder_10003 extends Seeder with ISeeder {
             val calendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Shanghai"))
             calendar.add(Calendar.DATE, _days * -1)
 
-            val sql = "SELECT c.storyid,s.cheadline,count(storyid) views FROM `comment` c, `story` s where c.`ischecked`=1 and c.dnewdate > from_unixtime(%d) and s.publish_status='publish' and c.storyid=s.id and s.eskylinetext not like '%低调%' group by c.storyid order by views desc limit %d".format(calendar.getTimeInMillis / 1000, _topNum)
+            val sql = "SELECT c.storyid,s.cheadline,count(storyid) views FROM `comment` c, `story` s where c.`ischecked`=1 and c.dnewdate > from_unixtime(" + (calendar.getTimeInMillis / 1000) + ") and s.publish_status='publish' and c.storyid=s.id and s.eskylinetext not like '%低调%' group by c.storyid order by views desc limit " + _topNum
 
             val ps = conn.prepareStatement(sql)
             val rs = ps.executeQuery()
