@@ -19,7 +19,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scala.version>2.10.4</scala.version>
-        <easyapi.version>1.0.27-SNAPSHOT</easyapi.version>
+        <easyapi.version>1.1.0-SNAPSHOT</easyapi.version>
         <file_encoding>UTF-8</file_encoding>
     </properties>
 
