@@ -69,14 +69,14 @@ final class Seeder_60006 extends Seeder with ISeeder {
                     val storyData = manager.transform("10002", Map(("storyid", idList)))
 
                     if(storyData.oelement.get("errorcode").get == "0"){
-                        val data1 = data.map(x => (x.get("storyid").get,x.get("totalpv").get))
-                        val data2 = storyData.odata.map(x => (x.get("id").get,x.get("cheadline").get))
+                        val data1 = data.map(x => (x.get("storyid").get, x.get("totalpv").get))
+                        val data2 = storyData.odata.map(x => (x.get("id").get, x.get("cheadline").get))
 
                         val mergeData = data1 ++ data2
                         dataList = mergeData.groupBy(_._1).map(x => x._1 -> x._2.map(_._2)).map(y => Map("storyid" -> y._1, "totalpv" -> y._2.head, "title" -> y._2(1))).toList
 
                         val cache_data = new EasyOutput
-                        cache_data.odata = dataList
+                        cache_data.odata = dataList.sortBy(x => x.getOrElse("totalpv", 0).toString.toInt)(Ordering.Int.reverse)
                         cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
                         cacher.cacheData(cache_name, cache_data)
                     } else {
