@@ -1,11 +1,8 @@
 package com.ftchinese.workers
 
-import java.util.{Calendar, TimeZone}
-
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.MysqlDriver
 import com.wanbo.easyapi.server.lib.{EasyException, EasyOutput, ISeeder, Seeder}
-import com.wanbo.easyapi.shared.common.utils.Utils
 import org.slf4j.LoggerFactory
 
 
@@ -76,7 +73,7 @@ final class Seeder_60006 extends Seeder with ISeeder {
                         val data2 = storyData.odata.map(x => (x.get("id").get,x.get("cheadline").get))
 
                         val mergeData = data1 ++ data2
-                        dataList = mergeData.groupBy(_._1).map(x => x._1 -> x._2.map(_._2)).map(y => Map("storyid" -> y._1, "totalpv" -> y._2(0), "title" -> y._2(1))).toList
+                        dataList = mergeData.groupBy(_._1).map(x => x._1 -> x._2.map(_._2)).map(y => Map("storyid" -> y._1, "totalpv" -> y._2.head, "title" -> y._2(1))).toList
 
                         val cache_data = new EasyOutput
                         cache_data.odata = dataList
@@ -110,37 +107,29 @@ final class Seeder_60006 extends Seeder with ISeeder {
             val driver = this.driver.asInstanceOf[MysqlDriver]
             val conn = driver.getConnector("analytic")
 
-            val calendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Shanghai"))
-            val tables = Utils.formatTablesNameByDate(days = _days, tabPrefix = "access_info_")
-
-            if(tables.size > 0) {
-
-                var sql = "SELECT x.ai_storyid storyid, sum(x.num) numx FROM ("
-
-                var where = " ai_accesstime > %d and ".format(calendar.getTimeInMillis / 1000 - _days * 86400)
-                var and = ""
-
-                tables.foreach(tab => {
-                    sql += and + "select ai_storyid,count(ai_storyid) num from analytic.`%s` where %s ai_storyid != '' group by ai_storyid ".format(tab, where)
-                    where = ""
-                    and = " union all "
-                })
-
-                sql += ") x group by x.ai_storyid order by numx desc limit %d;".format(_topNum)
-
-                val ps = conn.prepareStatement(sql)
-                val rs = ps.executeQuery()
-
-                while (rs.next()) {
-                    var tmpMap = Map[String, String]()
-                    tmpMap = tmpMap + ("storyid" -> rs.getString(1))
-                    tmpMap = tmpMap + ("totalpv" -> rs.getString(2))
-                    dataList = dataList :+ tmpMap
-                }
-
-                rs.close()
-                ps.close()
+            val _type = _days match {
+                case 7 =>
+                    "week"
+                case 30 =>
+                    "month"
+                case _ =>
+                    "day"
             }
+
+            val sql = "SELECT " + _type + " storyid, " + _type + "_num totalpv FROM most_popular"
+
+            val ps = conn.prepareStatement(sql)
+            val rs = ps.executeQuery()
+
+            while (rs.next()) {
+                var tmpMap = Map[String, String]()
+                tmpMap = tmpMap + ("storyid" -> rs.getString(1))
+                tmpMap = tmpMap + ("totalpv" -> rs.getString(2))
+                dataList = dataList :+ tmpMap
+            }
+
+            rs.close()
+            ps.close()
 
             conn.close()
 
