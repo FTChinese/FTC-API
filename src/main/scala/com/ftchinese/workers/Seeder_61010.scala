@@ -62,6 +62,9 @@ final class Seeder_61010 extends Seeder with ISeeder {
             else
                 throw new EasyException("20001")
 
+            if(seed.contains("isUpdateCache") && seed.getOrElse("isUpdateCache", "") == "isUpdateCache")
+                isUpdateCache = true
+
             // Cache
             val cache_name = "Seeder_61009" + _primeKey
 
