@@ -126,21 +126,43 @@ final class Seeder_61010 extends Seeder with ISeeder {
             cache_data.odata = List[Map[String, Any]]()
 
             val sortData = data.sortBy(x => x._3)(Ordering.Double.reverse)
-            sortData.slice(0, 30).foreach(x => {
+            sortData.slice(0, 15).foreach(x => {
                 var obj = Map[String, Any]()
-                obj = obj + ("storyid" -> x._1.reverse.padTo(9, 0).reverse.mkString)
+
+                val storyId = x._1.reverse.padTo(9, 0).reverse.mkString
+                obj = obj + ("storyid" -> storyId)
                 obj = obj + ("cheadline" -> x._2)
+                obj = obj + ("piclink" -> getStoryPic(storyId))
                 dataList = dataList :+ obj
 
                 cache_data.odata = cache_data.odata :+ obj
             })
             cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
-            cacheManager.cacheData(cache_name, cache_data)
+            cacheManager.cacheData(cache_name, cache_data, 21600)
         }
 
         cacheManager.close()
 
         dataList
+    }
+
+    private def getStoryPic(storyId: String): String ={
+        var imgLink = ""
+
+        val imgData = manager.transform("10006", Map("storyid" -> storyId))
+
+        if (imgData.oelement.get("errorcode").get == "0") {
+            val cover = imgData.odata.filter(x => x.getOrElse("otype", "")  == "Cover")
+            val other = imgData.odata.filter(x => x.getOrElse("otype", "")  == "Other" || x.getOrElse("otype", "")  == "BigButton")
+
+            if(cover.nonEmpty){
+                imgLink = cover.head.getOrElse("olink", "").toString.replaceFirst("/upload", "http://i.ftimg.net")
+            } else if (other.nonEmpty) {
+                imgLink = other.head.getOrElse("olink", "").toString.replaceFirst("/upload", "http://i.ftimg.net")
+            }
+        }
+
+        imgLink
     }
 
     override protected def onDBHandle(): List[(String, String, Double)] = {
