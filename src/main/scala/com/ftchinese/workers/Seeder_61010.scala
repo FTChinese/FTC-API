@@ -59,8 +59,6 @@ final class Seeder_61010 extends Seeder with ISeeder {
 
             if(storyId != "")
                 _storyId = storyId
-            else
-                throw new EasyException("20001")
 
             if(seed.contains("isUpdateCache") && seed.getOrElse("isUpdateCache", "") == "isUpdateCache")
                 isUpdateCache = true
@@ -72,6 +70,11 @@ final class Seeder_61010 extends Seeder with ISeeder {
             val cacheData = cacher.cacheData(cache_name)
 
             if (cacheData != null && (cacheData.oelement.get("errorcode").get == "0") && !isUpdateCache) {
+
+                if(_storyId == ""){
+                    throw new EasyException("20001")
+                }
+
                 var notExist = true
                 cacheData.odata.foreach(x => {
                     log.info("storyid in cache:" + x.getOrElse("storyid", ""))
