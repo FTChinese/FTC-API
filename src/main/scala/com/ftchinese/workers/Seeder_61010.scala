@@ -69,6 +69,7 @@ final class Seeder_61010 extends Seeder with ISeeder {
             val cacher = new CacheManager(conf = _conf, expire = 21600)
             val cacheData = cacher.cacheData(cache_name)
 
+            // Prevent the concurrent operation
             if (cacheData != null && (cacheData.oelement.get("errorcode").get == "0") && !isUpdateCache) {
 
                 if(_storyId == ""){
