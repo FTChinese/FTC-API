@@ -76,16 +76,32 @@ final class Seeder_31003 extends Seeder with ISeeder {
             val driver = this.driver.asInstanceOf[MysqlDriver]
             val conn = driver.getConnector("user_db", writable = true)
 
+            // Whether the campaign exists.
+            var isExists = false
+            val sqlExists = "SELECT `uuid` FROM `user_personal` WHERE `uuid`='%s' and `type`='%s' and `name`='%s' and `value`='%s' and `status`=1;".format(_uuId, _type, _name, _value)
+
+            var ps = conn.prepareStatement(sqlExists)
+            val rs = ps.executeQuery()
+
+            if(rs.next())
+                isExists = true
+
             var sql = ""
             if(_cmd == 1){
-                sql = "INSERT `user_personal` (uuid, `type`, `name`, `value`) VALUES('%s', '%s', '%s', '%s');".format(_uuId, _type, _name, _value)
+                if(isExists){
+                    throw new EasyException("20101")
+                } else {
+                    sql = "INSERT `user_personal` (uuid, `type`, `name`, `value`) VALUES('%s', '%s', '%s', '%s');".format(_uuId, _type, _name, _value)
+                }
             } else {
-                sql = "UPDATE `user_personal` SET `status` = 0 WHERE `uuid`='%s' and `type`='%s' and `name`='%s' and `value`='%s';".format(_uuId, _type, _name, _value)
+                if(isExists) {
+                    sql = "UPDATE `user_personal` SET `status` = 0 WHERE `uuid`='%s' and `type`='%s' and `name`='%s' and `value`='%s';".format(_uuId, _type, _name, _value)
+                } else {
+                    throw new EasyException("20100")
+                }
             }
 
-            log.info("SQL--------:" + sql)
-
-            val ps = conn.prepareStatement(sql)
+            ps = conn.prepareStatement(sql)
             val num = ps.executeUpdate()
 
             if(num < 1){
