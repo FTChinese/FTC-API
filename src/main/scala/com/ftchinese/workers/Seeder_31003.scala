@@ -78,7 +78,7 @@ final class Seeder_31003 extends Seeder with ISeeder {
 
             var sql = ""
             if(_cmd == 1){
-                sql = "INSERT `user_personal` (uuid, `type`, `name`, `value`) VALUES('%s', '%s', '%s', '%s',);".format(_uuId, _type, _name, _value)
+                sql = "INSERT `user_personal` (uuid, `type`, `name`, `value`) VALUES('%s', '%s', '%s', '%s');".format(_uuId, _type, _name, _value)
             } else {
                 sql = "UPDATE `user_personal` SET `status` = 0 WHERE `uuid`='%s' and `type`='%s' and `name`='%s' and `value`='%s';".format(_uuId, _type, _name, _value)
             }
