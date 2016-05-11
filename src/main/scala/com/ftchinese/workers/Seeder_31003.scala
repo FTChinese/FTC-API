@@ -78,24 +78,32 @@ final class Seeder_31003 extends Seeder with ISeeder {
 
             // Whether the campaign exists.
             var isExists = false
-            val sqlExists = "SELECT `uuid` FROM `user_personal` WHERE `uuid`='%s' and `type`='%s' and `name`='%s' and `value`='%s' and `status`=1;".format(_uuId, _type, _name, _value)
+            var isFollowed = false
+            val sqlExists = "SELECT `status` FROM `user_personal` WHERE `uuid`='%s' and `type`='%s' and `name`='%s' and `value`='%s' ;".format(_uuId, _type, _name, _value)
 
             var ps = conn.prepareStatement(sqlExists)
             val rs = ps.executeQuery()
 
-            if(rs.next())
+            if(rs.next()) {
                 isExists = true
+                if(rs.getInt(1) == 1) isFollowed = true
+            }
 
             var sql = ""
             if(_cmd == 1){
                 if(isExists){
-                    throw new EasyException("20101")
+
+                    if(isFollowed)
+                        throw new EasyException("20101")
+                    else
+                        sql = "UPDATE `user_personal` SET `status` = 1, last_update=current_timestamp WHERE `uuid`='%s' and `type`='%s' and `name`='%s' and `value`='%s';".format(_uuId, _type, _name, _value)
+
                 } else {
                     sql = "INSERT `user_personal` (uuid, `type`, `name`, `value`) VALUES('%s', '%s', '%s', '%s');".format(_uuId, _type, _name, _value)
                 }
             } else {
                 if(isExists) {
-                    sql = "UPDATE `user_personal` SET `status` = 0 WHERE `uuid`='%s' and `type`='%s' and `name`='%s' and `value`='%s';".format(_uuId, _type, _name, _value)
+                    sql = "UPDATE `user_personal` SET `status` = 0, last_update=current_timestamp WHERE `uuid`='%s' and `type`='%s' and `name`='%s' and `value`='%s';".format(_uuId, _type, _name, _value)
                 } else {
                     throw new EasyException("20100")
                 }
