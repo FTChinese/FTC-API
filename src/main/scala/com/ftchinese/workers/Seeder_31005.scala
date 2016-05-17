@@ -18,6 +18,7 @@ final class Seeder_31005 extends Seeder with ISeeder {
 
     private var _uuId: String = ""
     private val _type: String = "myft"
+    private var _topNum: Int = 10
 
     private var _myConf = Map[String, Set[String]]()
 
@@ -38,9 +39,18 @@ final class Seeder_31005 extends Seeder with ISeeder {
 
             _uuId = uuId.trim
 
+            val num = seed.getOrElse("topnum", "10").toString
+            if (num == null || !num.forall(_.isDigit)){
+                _topNum = 10
+            } else {
+                _topNum = num.toInt
+            }
+
+            if(_topNum > 30)
+                _topNum = 30
 
             // Cache
-            val cache_name = this.getClass.getSimpleName + _uuId
+            val cache_name = this.getClass.getSimpleName + _uuId + _topNum
 
             val cacher = new CacheManager(_conf, expire = 10)
             val cacheData = cacher.cacheData(cache_name)
@@ -107,7 +117,7 @@ final class Seeder_31005 extends Seeder with ISeeder {
                         case "tag" =>
                             var tmpList = List[Map[String, Any]]()
 
-                            val sql = "SELECT `tag`,`contentid`,`type`,`cheadline`,`clead`,`pubdate` FROM `tag_content` WHERE tag in ('" + x._2.mkString("','") + "') order by pubdate desc, contentid desc;"
+                            val sql = "SELECT `tag`,`contentid`,`type`,`cheadline`,`clead`,`pubdate` FROM `tag_content` WHERE tag in ('" + x._2.mkString("','") + "') order by pubdate desc, contentid desc limit %d;".format(_topNum)
 
                             log.info("SQL--------:" + sql)
 
