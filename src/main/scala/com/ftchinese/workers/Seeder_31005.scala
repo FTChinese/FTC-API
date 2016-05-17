@@ -119,7 +119,7 @@ final class Seeder_31005 extends Seeder with ISeeder {
 
                             val sql = "SELECT `tag`,`contentid`,`type`,`cheadline`,`clead`,`pubdate` FROM `tag_content` WHERE tag in ('" + x._2.mkString("','") + "') order by pubdate desc, contentid desc limit %d;".format(_topNum)
 
-                            log.info("SQL--------:" + sql)
+                            //log.info("SQL--------:" + sql)
 
                             val ps = conn.prepareStatement(sql)
                             val rs = ps.executeQuery()
