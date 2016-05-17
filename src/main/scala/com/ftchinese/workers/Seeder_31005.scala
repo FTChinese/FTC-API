@@ -115,7 +115,6 @@ final class Seeder_31005 extends Seeder with ISeeder {
                 _myConf.foreach ( x => {
                     x._1 match {
                         case "tag" =>
-                            var tmpList = List[Map[String, Any]]()
 
                             val sql = "SELECT `tag`,`contentid`,`type`,`cheadline`,`clead`,`pubdate` FROM `tag_content` WHERE tag in ('" + x._2.mkString("','") + "') order by pubdate desc, contentid desc limit %d;".format(_topNum)
 
@@ -133,11 +132,8 @@ final class Seeder_31005 extends Seeder with ISeeder {
                                 tmpMap = tmpMap + ("clead" -> rs.getString(5))
                                 tmpMap = tmpMap + ("pubdate" -> rs.getString(6))
 
-                                tmpList = tmpList :+ tmpMap
+                                dataList = dataList :+ tmpMap
                             }
-
-                            if(tmpList.nonEmpty)
-                                dataList = dataList :+ Map[String, Any]("tags" -> tmpList)
 
                             rs.close()
                             ps.close()
