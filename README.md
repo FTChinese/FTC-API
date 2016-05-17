@@ -1,5 +1,3 @@
 # FTChinese API
 
-* Quick Start
-
-    https://github.com/FTChinese/FTC-API/wiki/Quick-Start
+* [Quick Start](https://github.com/FTChinese/FTC-API/wiki/Quick-Start)
