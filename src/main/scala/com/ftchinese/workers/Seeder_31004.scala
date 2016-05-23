@@ -84,7 +84,7 @@ final class Seeder_31004 extends Seeder with ISeeder {
 
             val sql = "SELECT `name`,`value` FROM `user_personal` WHERE `status` = 1 and `uuid`='%s' and `type`='%s';".format(_uuId, _type)
 
-            log.info("SQL--------:" + sql)
+            // log.info("SQL--------:" + sql)
 
             val ps = conn.prepareStatement(sql)
             val rs = ps.executeQuery()
