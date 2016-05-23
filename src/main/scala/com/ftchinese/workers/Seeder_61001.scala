@@ -4,6 +4,7 @@ import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.HBaseDriver
 import com.wanbo.easyapi.server.lib._
 import com.wanbo.easyapi.server.messages.CacheUpdate
+import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.{Get, HTable}
 import org.apache.hadoop.hbase.util.Bytes
 import org.slf4j.LoggerFactory
@@ -120,7 +121,8 @@ final class Seeder_61001 extends Seeder with ISeeder {
         try {
 
             val driver = this.driver.asInstanceOf[HBaseDriver]
-            val table = new HTable(driver.getHConf, Bytes.toBytes("user_cookieids"))
+            val conn = driver.getConnector("")
+            val table = conn.getTable(TableName.valueOf("user_cookieids"))
 
             log.info("Query ---------- cookieid:" + _cookieId)
 
@@ -134,6 +136,7 @@ final class Seeder_61001 extends Seeder with ISeeder {
                 uuid = new String(uuidBytes)
 
             table.close()
+            conn.close()
         } catch {
             case e: Exception =>
                 throw e

@@ -4,7 +4,8 @@ import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.HBaseDriver
 import com.wanbo.easyapi.server.lib._
 import com.wanbo.easyapi.server.messages.CacheUpdate
-import org.apache.hadoop.hbase.client.{HTable, Scan}
+import org.apache.hadoop.hbase.TableName
+import org.apache.hadoop.hbase.client.Scan
 import org.apache.hadoop.hbase.filter.PrefixFilter
 import org.apache.hadoop.hbase.util.Bytes
 import org.slf4j.LoggerFactory
@@ -170,7 +171,9 @@ final class Seeder_61009 extends Seeder with ISeeder {
 
             val driver = this.driver.asInstanceOf[HBaseDriver]
 
-            val table = new HTable(driver.getHConf, Bytes.toBytes("user_recommend_stories"))
+            val conn = driver.getConnector("")
+
+            val table = conn.getTable(TableName.valueOf("user_recommend_stories"))
 
             val scan = new Scan()
             scan.addFamily(Bytes.toBytes("c"))
@@ -222,6 +225,7 @@ final class Seeder_61009 extends Seeder with ISeeder {
             }
 
             table.close()
+            conn.close()
         } catch {
             case e: Exception =>
                 throw e

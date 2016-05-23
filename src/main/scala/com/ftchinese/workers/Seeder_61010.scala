@@ -3,7 +3,8 @@ package com.ftchinese.workers
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.HBaseDriver
 import com.wanbo.easyapi.server.lib.{EasyException, EasyOutput, ISeeder, Seeder}
-import org.apache.hadoop.hbase.client.{Delete, HTable, Scan}
+import org.apache.hadoop.hbase.TableName
+import org.apache.hadoop.hbase.client.{Delete, Scan}
 import org.apache.hadoop.hbase.filter.PrefixFilter
 import org.apache.hadoop.hbase.util.Bytes
 import org.slf4j.LoggerFactory
@@ -179,7 +180,8 @@ final class Seeder_61010 extends Seeder with ISeeder {
 
             val driver = this.driver.asInstanceOf[HBaseDriver]
 
-            val table = new HTable(driver.getHConf, Bytes.toBytes("user_recommend_stories"))
+            val conn = driver.getConnector("")
+            val table = conn.getTable(TableName.valueOf("user_recommend_stories"))
 
             // Delete the current story
 
@@ -187,8 +189,9 @@ final class Seeder_61010 extends Seeder with ISeeder {
 
             val d = new Delete(Bytes.toBytes(rowKey))
 
-            d.deleteFamily(Bytes.toBytes("a"))
-            d.deleteFamily(Bytes.toBytes("c"))
+
+            d.addFamily(Bytes.toBytes("a"))
+            d.addFamily(Bytes.toBytes("c"))
 
             table.delete(d)
 
@@ -244,6 +247,7 @@ final class Seeder_61010 extends Seeder with ISeeder {
             }
 
             table.close()
+            conn.close()
         } catch {
             case e: Exception =>
                 throw e
