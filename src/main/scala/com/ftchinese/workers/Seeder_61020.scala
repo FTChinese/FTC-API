@@ -101,9 +101,38 @@ final class Seeder_61020 extends Seeder with ISeeder {
 
         var dataList = List[Map[String, Any]]()
 
-        val data = onDBHandle()
+        // Cache Level 2
+        val cacheName = this.getClass.getSimpleName + "sourceData"
 
-        if (data.size < 1)
+        val cacheL2 = new CacheManager(conf = _conf, expire = 600)
+        val cacheData = cacheL2.cacheData(cacheName)
+
+        var resourceData = List[(String, String)]()
+
+        if (cacheData != null && cacheData.oelement.get("errorcode").get == "0") {
+            resourceData = cacheData.odata.map(x => {
+                (x.getOrElse("uuid", "").toString, x.getOrElse("tag", "").toString)
+            })
+        } else {
+            resourceData = onDBHandle()
+
+            val cache_data = new EasyOutput
+            cache_data.odata = List[Map[String, Any]]()
+
+            resourceData.foreach(x => {
+                var obj = Map[String, Any]()
+
+                obj = obj + ("uuid" -> x._1)
+                obj = obj + ("tag" -> x._2)
+                cache_data.odata = cache_data.odata :+ obj
+            })
+
+            cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
+            cacheL2.cacheData(cacheName, cache_data, 600)
+        }
+        cacheL2.close()
+
+        if (resourceData.size < 1)
             throw new EasyException("20100")
         else {
             val cache_data = new EasyOutput
@@ -111,7 +140,7 @@ final class Seeder_61020 extends Seeder with ISeeder {
 
             val diffusing = new Diffusing()
 
-            diffusing.fit(data)
+            diffusing.fit(resourceData)
 
             val predictData = diffusing.predictMD(_primeKey)
 
@@ -127,8 +156,6 @@ final class Seeder_61020 extends Seeder with ISeeder {
             cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
             cacheManager.cacheData(cache_name, cache_data, 600)
         }
-
-        //cacheManager.close()
 
         dataList
     }
