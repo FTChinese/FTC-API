@@ -98,7 +98,7 @@ final class Seeder_61009 extends Seeder with ISeeder {
             cacher.close()
 
             fruits.oelement = fruits.oelement.updated("errorcode", "0").+("duration" -> (System.currentTimeMillis() - startRunTime).toString)
-            fruits.odata = util.Random.shuffle(dataList).slice(0, 10)
+            //fruits.odata = util.Random.shuffle(dataList).slice(0, 10)
             fruits.odata = dataList.slice(0, 10)
         } catch {
             case ee: EasyException =>
