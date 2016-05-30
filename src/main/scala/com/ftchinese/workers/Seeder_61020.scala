@@ -8,8 +8,8 @@ import com.wanbo.easyapi.server.messages.CacheUpdate
 import org.slf4j.LoggerFactory
 
 /**
- * Recommend stories for users. (Base on access history)
- * Created by wanbo on 2015/4/17.
+ * Recommend tags for users. (Base on following tags data)
+ * Created by wanbo on 2016/5/30.
  */
 final class Seeder_61020 extends Seeder with ISeeder {
 
