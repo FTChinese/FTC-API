@@ -125,7 +125,7 @@ final class Seeder_61020 extends Seeder with ISeeder {
                 cache_data.odata = cache_data.odata :+ obj
             })
             cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
-            cacheManager.cacheData(cache_name, cache_data, 21600)
+            cacheManager.cacheData(cache_name, cache_data, 600)
         }
 
         //cacheManager.close()
