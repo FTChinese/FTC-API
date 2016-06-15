@@ -132,7 +132,7 @@ final class Seeder_10005 extends Seeder with ISeeder {
                 where = "WHERE tag in ('" + _tags.mkString("','") + "') and `type`=%d".format(_type)
             }
 
-            val sql = "SELECT `tag`,`contentid`,`type`,`cheadline`,`clead`,`pubdate` FROM `tag_content` " + where + " order by pubdate desc, contentid desc limit %d,%d;".format((_pageIndex - 1) * _pageSize + 1, _pageSize)
+            val sql = "SELECT `tag`,`contentid`,`type`,`cheadline`,`clead`,`pubdate` FROM `tag_content` " + where + " order by pubdate desc, contentid desc limit %d,%d;".format((_pageIndex - 1) * _pageSize, _pageSize)
 
             //log.info("SQL--------:" + sql)
             
