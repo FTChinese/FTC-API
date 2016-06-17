@@ -1,7 +1,7 @@
 package com.ftchinese.workers
 
 import com.wanbo.easyapi.server.database.MysqlDriver
-import com.wanbo.easyapi.server.lib.{EasyException, EasyOutput, ISeeder, Seeder}
+import com.wanbo.easyapi.server.lib._
 import org.slf4j.LoggerFactory
 
 
@@ -55,6 +55,8 @@ final class Seeder_31003 extends Seeder with ISeeder {
 
             // Write to database.
             dataList = onDBHandle()
+
+            // todo: If possible, update the cache both 31004 and 31005
 
             fruits.oelement = fruits.oelement.updated("errorcode", "0")
             fruits.odata = dataList

@@ -41,6 +41,7 @@ final class Seeder_61020 extends Seeder with ISeeder {
 
             _primeKey = uuId
 
+
             // Cache
             val cache_name = this.getClass.getSimpleName + _primeKey
 
@@ -168,7 +169,7 @@ final class Seeder_61020 extends Seeder with ISeeder {
             val driver = this.driver.asInstanceOf[MysqlDriver]
             val conn = driver.getConnector("user_db")
 
-            val sql = "SELECT `uuid`, `value` FROM user_db.user_personal where `type`='%s' and `name`='tag' and status=1 order by last_update desc limit 1000;".format(_type)
+            val sql = "SELECT `uuid`, `value` FROM user_db.user_personal where `type`='%s' and `name`='tag' and status=1 order by last_update desc limit 10000;".format(_type)
 
             //log.info("SQL--------:" + sql)
 
