@@ -152,7 +152,7 @@ final class Seeder_11006 extends Seeder with ISeeder {
             val driver = this.driver.asInstanceOf[MysqlDriver]
             val conn = driver.getConnector("cmstmp01")
 
-            val sql = "SELECT k.*,m.`clongleadbody` FROM (SELECT s.`id`, s.`cheadline`, s.`cshortleadbody`, s.`tag`, s.`column`, s.`pubdate`, s.`fileupdatetime` FROM story s, (SELECT id FROM channel_detail c WHERE c.`chaid` IN (%d) AND c.`type` = 1 ORDER BY c.addtime DESC LIMIT %d,%d) b WHERE s.id = b.id AND s.publish_status = 'publish' AND s.eskylinetext not like '%低调%') k LEFT JOIN story_metadata m ON k.id = m.storyid ORDER BY k.pubdate DESC, k.`fileupdatetime` DESC, k.id DESC;".format(_chanelId, (_pageIndex - 1) * _pageSize + 1, _pageSize)
+            val sql = "SELECT k.*,m.`clongleadbody` FROM (SELECT s.`id`, s.`cheadline`, s.`cshortleadbody`, s.`tag`, s.`column`, s.`pubdate`, s.`fileupdatetime` FROM story s, (SELECT id FROM channel_detail c WHERE c.`chaid` IN (%d) AND c.`type` = 1 ORDER BY c.addtime DESC LIMIT %d,%d) b WHERE s.id = b.id AND s.publish_status = 'publish') k LEFT JOIN story_metadata m ON k.id = m.storyid ORDER BY k.pubdate DESC, k.`fileupdatetime` DESC, k.id DESC;".format(_chanelId, (_pageIndex - 1) * _pageSize, _pageSize)
 
             val ps = conn.prepareStatement(sql)
             val rs = ps.executeQuery()
