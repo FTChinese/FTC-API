@@ -2,6 +2,7 @@ package com.ftchinese.workers
 
 import com.wanbo.easyapi.server.database.MysqlDriver
 import com.wanbo.easyapi.server.lib._
+import com.wanbo.easyapi.server.messages.CacheUpdate
 import org.slf4j.LoggerFactory
 
 
@@ -56,7 +57,8 @@ final class Seeder_31003 extends Seeder with ISeeder {
             // Write to database.
             dataList = onDBHandle()
 
-            // todo: If possible, update the cache both 31004 and 31005
+            // Update the cache both 31004 and 31005, but 31005 need to be updated when 31004 is updated complete.
+            MessageQ.push("UpdateCache", CacheUpdate("31004", seed.filter(_._1=="uuid")))
 
             fruits.oelement = fruits.oelement.updated("errorcode", "0")
             fruits.odata = dataList

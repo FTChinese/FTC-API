@@ -2,7 +2,8 @@ package com.ftchinese.workers
 
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.MysqlDriver
-import com.wanbo.easyapi.server.lib.{EasyException, EasyOutput, ISeeder, Seeder}
+import com.wanbo.easyapi.server.lib._
+import com.wanbo.easyapi.server.messages.CacheUpdate
 import org.slf4j.LoggerFactory
 
 
@@ -40,7 +41,7 @@ final class Seeder_31004 extends Seeder with ISeeder {
             // Cache
             val cache_name = this.getClass.getSimpleName + _uuId
 
-            val cacher = new CacheManager(_conf, expire = 3600)
+            val cacher = new CacheManager(_conf, expire = 86400)
             val cacheData = cacher.cacheData(cache_name)
 
             if (cacheData != null && cacheData.oelement.get("errorcode").get == "0" && !isUpdateCache) {
@@ -58,6 +59,9 @@ final class Seeder_31004 extends Seeder with ISeeder {
 
                     cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
                     cacher.cacheData(cache_name, cache_data)
+
+                    // Synchronization update the 31005 cache.
+                    MessageQ.push("UpdateCache", CacheUpdate("31005", Map("uuid" -> _uuId, "topnum" -> 30)))
                 }
             }
             cacher.close()
