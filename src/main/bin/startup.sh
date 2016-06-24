@@ -74,8 +74,8 @@ else
 fi
 
 ### Set app version
-libFile=`ls -l ${base}/lib/easyapi.server*|awk '{print $9}'`
-libFile1=${libFile#*-}
+libFile=`ls ${base}/lib/ftc-api*`
+libFile1=${libFile#*api-}
 appVersion=${libFile1%-*}
 
 JAVA_OPTS=" $JAVA_OPTS -Djava.awt.headless=true -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8"
