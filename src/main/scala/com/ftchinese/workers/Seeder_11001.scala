@@ -102,7 +102,7 @@ final class Seeder_11001 extends Seeder with ISeeder {
         val aList = list.filter(_._2 == reId)
         val bList = list.diff(aList)
 
-        if(bList.size > 0) {
+        if(bList.nonEmpty) {
             aList.foreach(x => {
                 var tmpMap = Map[String, Any]()
 
