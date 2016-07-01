@@ -22,6 +22,8 @@ final class Seeder_61010 extends Seeder with ISeeder {
     private var _storyId = ""
     private var _primeKey = ""
 
+    private val cache_time = 86400
+
     private val log = LoggerFactory.getLogger(classOf[Seeder_61010])
 
     override def onHandle(seed: Map[String, Any]): EasyOutput = {
@@ -67,7 +69,7 @@ final class Seeder_61010 extends Seeder with ISeeder {
             // Cache
             val cache_name = "Seeder_61009" + _primeKey
 
-            val cacher = new CacheManager(conf = _conf, expire = 21600)
+            val cacher = new CacheManager(conf = _conf, expire = cache_time)
             val cacheData = cacher.cacheData(cache_name)
 
             // Prevent the concurrent operation
@@ -146,7 +148,7 @@ final class Seeder_61010 extends Seeder with ISeeder {
                 cache_data.odata = cache_data.odata :+ obj
             })
             cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
-            cacheManager.cacheData(cache_name, cache_data, 21600)
+            cacheManager.cacheData(cache_name, cache_data, cache_time)
         }
 
         cacheManager.close()

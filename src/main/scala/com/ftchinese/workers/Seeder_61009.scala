@@ -22,6 +22,8 @@ final class Seeder_61009 extends Seeder with ISeeder {
 
     private var _primeKey = ""
 
+    private val cache_time = 86400
+
     private val log = LoggerFactory.getLogger(classOf[Seeder_61009])
 
     override def onHandle(seed: Map[String, Any]): EasyOutput = {
@@ -58,7 +60,7 @@ final class Seeder_61009 extends Seeder with ISeeder {
             // Cache
             val cache_name = this.getClass.getSimpleName + _primeKey
 
-            val cacher = new CacheManager(conf = _conf, expire = 21600)
+            val cacher = new CacheManager(conf = _conf, expire = cache_time)
             val cacheData = cacher.cacheData(cache_name)
 
             if (cacheData != null && (cacheData.oelement.get("errorcode").get == "0" || cacheData.oelement.get("errorcode").get == "20101") && !isUpdateCache) {
@@ -137,7 +139,7 @@ final class Seeder_61009 extends Seeder with ISeeder {
                 cache_data.odata = cache_data.odata :+ obj
             })
             cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
-            cacheManager.cacheData(cache_name, cache_data, 21600)
+            cacheManager.cacheData(cache_name, cache_data, cache_time)
         }
 
         //cacheManager.close()
