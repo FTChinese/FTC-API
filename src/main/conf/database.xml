@@ -3,31 +3,28 @@
 <configuration scan="true" scanPeriod="30 seconds">
 
     <property type="mysql" writable="true">
-        <host>172.27.10.23</host>
+        <host>localhost</host>
         <port>3306</port>
         <uname>root</uname>
-        <upswd>FinancialTest</upswd>
-        <dbname>cmstmp01</dbname>
+        <upswd>123</upswd>
+        <dbname>test</dbname>
     </property>
 
     <property type="mysql">
-        <host>172.27.10.23</host>
+        <host>localhost</host>
         <port>3306</port>
         <uname>root</uname>
-        <upswd>FinancialTest</upswd>
-        <dbname>cmstmp01</dbname>
-    </property>
-
-    <property type="mysql">
-        <host>54.255.24.253</host>
-        <port>3306</port>
-        <uname>root</uname>
-        <upswd>FinancialAnalysis-2014</upswd>
-        <dbname>analytic</dbname>
+        <upswd>123</upswd>
+        <dbname>test</dbname>
     </property>
 
     <property type="hbase">
-        <zookeeper>bjtest6:2181</zookeeper>
+        <zookeeper>localhost:2181</zookeeper>
+    </property>
+
+    <property type="mongo">
+        <host>localhost</host>
+        <port>27017</port>
     </property>
 
 </configuration>
