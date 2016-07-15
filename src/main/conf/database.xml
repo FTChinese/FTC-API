@@ -25,6 +25,7 @@
     <property type="mongo">
         <host>localhost</host>
         <port>27017</port>
+        <dbname>test</dbname>
     </property>
 
 </configuration>
