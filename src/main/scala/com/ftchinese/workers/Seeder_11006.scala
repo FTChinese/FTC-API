@@ -45,8 +45,8 @@ final class Seeder_11006 extends Seeder with ISeeder {
             if(_chanelId < 1)
                 throw new EasyException("20001")
 
-            if(_chanelId > 100)
-                _chanelId = 100
+            if(_chanelId > 1000)
+                throw new EasyException("20001")
 
             // Page
             val pageIndex: String = seed.getOrElse("pageindex", "1").toString
