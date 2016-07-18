@@ -84,11 +84,11 @@ final class Seeder_61010 extends Seeder with ISeeder with Logging {
 
                 var notExist = true
                 cacheData.odata.foreach(x => {
-                    log.info("storyid in cache:" + x.getOrElse("storyid", ""))
+                    //log.info("storyid in cache:" + x.getOrElse("storyid", ""))
                     if(x.getOrElse("storyid", "") == _storyId)
                         notExist = false
                 })
-                log.info("Current story id:" + _storyId)
+                //log.info("Current story id:" + _storyId)
 
                 // Maybe this one was already deleted.
                 if(notExist)
