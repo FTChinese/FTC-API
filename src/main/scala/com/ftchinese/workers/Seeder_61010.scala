@@ -1,30 +1,31 @@
 package com.ftchinese.workers
 
+import java.util.concurrent.TimeUnit
+
+import com.alibaba.fastjson.{JSON, JSONObject}
 import com.wanbo.easyapi.server.cache.CacheManager
-import com.wanbo.easyapi.server.database.HBaseDriver
+import com.wanbo.easyapi.server.database.MongoDriver
 import com.wanbo.easyapi.server.lib.{EasyException, EasyOutput, ISeeder, Seeder}
-import org.apache.hadoop.hbase.TableName
-import org.apache.hadoop.hbase.client.{Delete, Scan}
-import org.apache.hadoop.hbase.filter.PrefixFilter
-import org.apache.hadoop.hbase.util.Bytes
-import org.slf4j.LoggerFactory
+import com.wanbo.easyapi.shared.common.Logging
+import org.mongodb.scala._
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 /**
- * Working for update data of story recommendation (61009).
+ * Working for update data of story recommendation (61008).
  * Created by wanbo on 2015/4/17.
  */
-final class Seeder_61010 extends Seeder with ISeeder {
+final class Seeder_61010 extends Seeder with ISeeder with Logging {
 
     name = "61010"
 
-    driver = new HBaseDriver
+    driver = new MongoDriver
 
     private var _storyId = ""
     private var _primeKey = ""
 
     private val cache_time = 86400
-
-    private val log = LoggerFactory.getLogger(classOf[Seeder_61010])
 
     override def onHandle(seed: Map[String, Any]): EasyOutput = {
 
@@ -67,7 +68,7 @@ final class Seeder_61010 extends Seeder with ISeeder {
                 isUpdateCache = true
 
             // Cache
-            val cache_name = "Seeder_61009" + _primeKey
+            val cache_name = "Seeder_61008" + _primeKey
 
             val cacher = new CacheManager(conf = _conf, expire = cache_time)
             val cacheData = cacher.cacheData(cache_name)
@@ -180,76 +181,37 @@ final class Seeder_61010 extends Seeder with ISeeder {
 
         try {
 
-            val driver = this.driver.asInstanceOf[HBaseDriver]
+            val driver = this.driver.asInstanceOf[MongoDriver]
 
-            val conn = driver.getConnector("")
-            val table = conn.getTable(TableName.valueOf("user_recommend_stories"))
+            val coll = driver.getCollection("recommend", "recommend_stories")
 
-            // Delete the current story
+            //log.info("Query ---------- primeKey:" + _primeKey)
 
-            val rowKey = _primeKey + "#" + _storyId.toInt.toString
+            val retDocument = Await.result(coll.find(Document("_id" -> _primeKey)).first().toFuture(), Duration(10, TimeUnit.SECONDS))
 
-            val d = new Delete(Bytes.toBytes(rowKey))
+            if(retDocument.nonEmpty){
+                val stories = retDocument.head.get("stories")
+                stories.foreach(s => {
+                    val jsonString = s.asString().getValue
 
+                    val storyArr = JSON.parseArray(jsonString)
 
-            d.addFamily(Bytes.toBytes("a"))
-            d.addFamily(Bytes.toBytes("c"))
+                    val iterator = storyArr.iterator()
+                    while (iterator.hasNext) {
+                        val obj = iterator.next().asInstanceOf[JSONObject]
+                        val s = obj.getString("storyid")
+                        val c = obj.getString("cheadline")
+                        val r = obj.getString("rating")
 
-            table.delete(d)
-
-            // Read new data
-
-            val scan = new Scan()
-            scan.addFamily(Bytes.toBytes("c"))
-            scan.addColumn(Bytes.toBytes("c"), Bytes.toBytes("storyid"))
-            scan.addColumn(Bytes.toBytes("c"), Bytes.toBytes("cheadline"))
-            scan.addColumn(Bytes.toBytes("c"), Bytes.toBytes("rating"))
-
-            log.info("Query ---------- primeKey:" + _primeKey)
-
-            if(_primeKey != "") {
-                scan.setStartRow(Bytes.toBytes(_primeKey))
-                scan.setFilter(new PrefixFilter(Bytes.toBytes(_primeKey)))
-                scan.setStopRow(Bytes.toBytes(_primeKey + 'Z'))
-            }
-
-            log.info("Start row ------:" + new String(scan.getStartRow))
-            log.info("Stop row ------:" + new String(scan.getStopRow))
-
-            val retScanner = table.getScanner(scan)
-
-            var result = retScanner.next()
-            while (result != null) {
-
-                val rowKey = new String(result.getRow)
-                val fields = rowKey.split("#")
-                val id = fields(0)
-
-                log.info("Row key ------:" + rowKey)
-
-                if(_primeKey == id) {
-
-                    val s = result.getValue(Bytes.toBytes("c"), Bytes.toBytes("storyid"))
-                    val c = result.getValue(Bytes.toBytes("c"), Bytes.toBytes("cheadline"))
-                    val r = result.getValue(Bytes.toBytes("c"), Bytes.toBytes("rating"))
-
-                    if (s != null && c != null && r != null) {
-                        var rating: Double = 0
-                        try {
-                            rating = new String(r).toDouble
-                        } catch {
-                            case e: Exception =>
-                            // Ignore
-                        }
-                        dataList = dataList :+(new String(s), new String(c), rating)
+                        dataList = dataList :+ (s, c , r.toDouble)
                     }
-                }
-
-                result = retScanner.next()
+                })
+            } else {
+                throw new EasyException("20100")
             }
 
-            table.close()
-            conn.close()
+            // close
+            driver.close()
         } catch {
             case e: Exception =>
                 throw e
