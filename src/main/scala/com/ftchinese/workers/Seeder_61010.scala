@@ -2,12 +2,14 @@ package com.ftchinese.workers
 
 import java.util.concurrent.TimeUnit
 
-import com.alibaba.fastjson.{JSON, JSONObject}
+import com.alibaba.fastjson.{JSON, JSONArray, JSONObject}
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.MongoDriver
 import com.wanbo.easyapi.server.lib.{EasyException, EasyOutput, ISeeder, Seeder}
 import com.wanbo.easyapi.shared.common.Logging
 import org.mongodb.scala._
+import org.mongodb.scala.bson.BsonInt64
+import org.mongodb.scala.model.Filters
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -25,7 +27,7 @@ final class Seeder_61010 extends Seeder with ISeeder with Logging {
     private var _storyId = ""
     private var _primeKey = ""
 
-    private val cache_time = 86400
+    private val cache_time = 3600
 
     override def onHandle(seed: Map[String, Any]): EasyOutput = {
 
@@ -190,6 +192,9 @@ final class Seeder_61010 extends Seeder with ISeeder with Logging {
             val retDocument = Await.result(coll.find(Document("_id" -> _primeKey)).first().toFuture(), Duration(10, TimeUnit.SECONDS))
 
             if(retDocument.nonEmpty){
+
+                val storyList = new JSONArray()
+
                 val stories = retDocument.head.get("stories")
                 stories.foreach(s => {
                     val jsonString = s.asString().getValue
@@ -203,9 +208,18 @@ final class Seeder_61010 extends Seeder with ISeeder with Logging {
                         val c = obj.getString("cheadline")
                         val r = obj.getString("rating")
 
-                        dataList = dataList :+ (s, c , r.toDouble)
+                        if(_storyId.toInt.toString != s) {
+                            dataList = dataList :+(s, c, r.toDouble)
+                            storyList.add(obj)
+                        }
                     }
                 })
+
+                if(storyList.size() > 0){
+                    val ret = Await.result(coll.replaceOne(Filters.eq("_id", _primeKey), Document("_id" -> _primeKey, "stories" -> storyList.toJSONString, "addtime" -> BsonInt64(System.currentTimeMillis()))).toFuture(), Duration(10, TimeUnit.SECONDS))
+
+                    log.info("Records saved to MongoDB " + ret)
+                }
             } else {
                 throw new EasyException("20100")
             }
