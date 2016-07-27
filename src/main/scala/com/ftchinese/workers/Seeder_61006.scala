@@ -67,6 +67,7 @@ final class Seeder_61006 extends Seeder with ISeeder {
                             obj = obj + ("storyid" -> storyId)
                             obj = obj + ("cheadline" -> cHeadLine)
                             obj = obj + ("piclink" -> picLink)
+                            obj = obj + ("pv" -> pv)
                         }
 
                         if (obj.nonEmpty)
