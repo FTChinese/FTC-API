@@ -29,7 +29,7 @@ final class Seeder_10002 extends Seeder with ISeeder {
 
             val storyArr = storyIdStr.split(",")
 
-            if(storyArr.size > 0) {
+            if(storyArr.nonEmpty) {
                 storyArr.foreach(x => {
                     if(x != "" && x.forall(_.isDigit))
                         _idSet += x
