@@ -39,8 +39,14 @@ final class Seeder_61008 extends Seeder with ISeeder {
             val uuId = seed.getOrElse("uuid", "").toString
             val cookieId = seed.getOrElse("cookieid", "").toString
 
-            if (uuId == "" && cookieId == "")
-                throw new EasyException("20001")
+            if (uuId == "" && cookieId == ""){
+                log.info("The user information was empty, redirecting to 61006.")
+                val hotData = manager.transform("61006", Map[String, Any]())
+                fruits.oelement = hotData.oelement
+                fruits.odata = hotData.odata
+                log.info(hotData.oelement.get("errorcode").get)
+                throw new EasyException(hotData.oelement.get("errorcode").get)
+            }
 
             if (uuId == "") {
 
