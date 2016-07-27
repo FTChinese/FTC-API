@@ -18,6 +18,8 @@ final class Seeder_10002 extends Seeder with ISeeder {
     private var _idSet: Set[String] = Set()
     private var _type: String = "info"
 
+    private val cache_time = 86400
+
     private val log = LoggerFactory.getLogger(classOf[Seeder_10002])
 
     override def onHandle(seed: Map[String, Any]): EasyOutput = {
@@ -49,7 +51,7 @@ final class Seeder_10002 extends Seeder with ISeeder {
             // Cache
             val cache_name = this.getClass.getSimpleName + _idSet.hashCode() + _type
 
-            val cacher = new CacheManager(conf = _conf, expire = 600)
+            val cacher = new CacheManager(conf = _conf, expire = cache_time)
 
             val cacheData = cacher.cacheData(cache_name)
 
