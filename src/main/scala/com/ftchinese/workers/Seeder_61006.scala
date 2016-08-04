@@ -3,6 +3,7 @@ package com.ftchinese.workers
 import java.util.concurrent.TimeUnit
 
 import com.alibaba.fastjson.{JSON, JSONObject}
+import com.ftchinese.utils.Utils
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.MongoDriver
 import com.wanbo.easyapi.server.lib._
@@ -124,9 +125,9 @@ final class Seeder_61006 extends Seeder with ISeeder {
             val other = imgData.odata.filter(x => x.getOrElse("otype", "")  == "Other" || x.getOrElse("otype", "")  == "BigButton")
 
             if(cover.nonEmpty){
-                imgLink = cover.head.getOrElse("olink", "").toString.replaceFirst("/upload", "http://i.ftimg.net")
+                imgLink = Utils.formatRealImgUrl(cover.head.getOrElse("olink", "").toString)
             } else if (other.nonEmpty) {
-                imgLink = other.head.getOrElse("olink", "").toString.replaceFirst("/upload", "http://i.ftimg.net")
+                imgLink = Utils.formatRealImgUrl(other.head.getOrElse("olink", "").toString)
             }
         }
 
