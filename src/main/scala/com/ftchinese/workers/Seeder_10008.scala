@@ -16,6 +16,8 @@ final class Seeder_10008() extends Seeder with ISeeder {
 
     private var _storyId = ""
 
+    private val cache_time = 3600
+
     private val log = LoggerFactory.getLogger(classOf[Seeder_10008])
 
     override def onHandle(seed: Map[String, Any]): EasyOutput = {
@@ -34,7 +36,7 @@ final class Seeder_10008() extends Seeder with ISeeder {
             // Cache
             val cache_name = this.getClass.getSimpleName + _storyId
 
-            val cacher = new CacheManager(_conf, expire = 600)
+            val cacher = new CacheManager(_conf, expire = cache_time)
             val cacheData = cacher.cacheData(cache_name)
 
             if (cacheData != null && cacheData.oelement.get("errorcode").get == "0" && !isUpdateCache) {
@@ -93,7 +95,7 @@ final class Seeder_10008() extends Seeder with ISeeder {
             }
 
             // Get related story
-            if(storyList.size > 0) {
+            if(storyList.nonEmpty) {
 
                 val sqlStory = "select id,cheadline,eheadline,last_publish_time from `story` where `id` in (%s) and `publish_status` = 'publish' order by `id` desc limit 10;".format(storyList.mkString("'", "','", "'"))
 
