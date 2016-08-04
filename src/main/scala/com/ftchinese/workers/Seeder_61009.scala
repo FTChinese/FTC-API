@@ -75,7 +75,7 @@ final class Seeder_61009 extends Seeder with ISeeder {
                 fruits.oelement = fruits.oelement + ("fromcache" -> "true") + ("ttl" -> cacher.ttl.toString)
             } else {
 
-                val dataList = onDBHandle()
+                dataList = onDBHandle()
 
                 val cache_data = new EasyOutput
                 cache_data.odata = dataList
@@ -146,17 +146,16 @@ final class Seeder_61009 extends Seeder with ISeeder {
                         val picLink = getStoryPic(storyId)
                         if(picLink.nonEmpty) {
                             var tmpMap = Map[String, Any]()
-                            tmpMap = tmpMap + ("storyid" -> obj.getString("storyid"))
+                            tmpMap = tmpMap + ("storyid" -> storyId)
                             tmpMap = tmpMap + ("cheadline" -> obj.getString("cheadline"))
                             tmpMap = tmpMap + ("piclink" -> picLink)
                             tmpMap = tmpMap + ("rating" -> obj.getString("rating").toDouble)
-                            tmpMap = tmpMap + ("t" -> 1)
                             dataList = dataList :+ tmpMap
                         }
                     }
                 })
             } else {
-                //throw new EasyException("20100")
+                throw new EasyException("20100")
             }
 
             // close

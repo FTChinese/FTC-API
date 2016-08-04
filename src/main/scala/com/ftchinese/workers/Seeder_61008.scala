@@ -67,14 +67,14 @@ final class Seeder_61008 extends Seeder with ISeeder {
 
                 var uniqueIds = Set[String]()
 
-                val alsData = manager.transform("61009", Map[String, Any]())
+                val alsData = manager.transform("61009", seed)
                 val data_61009 = alsData.odata
                 var distinct_61009 = List[Map[String, Any]]()
 
                 data_61009.foreach(x => {
                     x.get("storyid").foreach(id => {
                         if(!uniqueIds.contains(id.toString)){
-                            distinct_61009 = distinct_61009 :+ x
+                            distinct_61009 = distinct_61009 :+ x.updated("t", 1)
                             uniqueIds = uniqueIds + id.toString
                         }
                     })
