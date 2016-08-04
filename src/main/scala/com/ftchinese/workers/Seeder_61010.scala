@@ -3,6 +3,7 @@ package com.ftchinese.workers
 import java.util.concurrent.TimeUnit
 
 import com.alibaba.fastjson.{JSON, JSONArray, JSONObject}
+import com.ftchinese.utils.Utils
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.MongoDriver
 import com.wanbo.easyapi.server.lib.{EasyException, EasyOutput, ISeeder, Seeder}
@@ -15,7 +16,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 /**
- * Working for update data of story recommendation (61008).
+ * Working for update data of story recommendation (61009).
  * Created by wanbo on 2015/4/17.
  */
 final class Seeder_61010 extends Seeder with ISeeder with Logging {
@@ -70,7 +71,7 @@ final class Seeder_61010 extends Seeder with ISeeder with Logging {
                 isUpdateCache = true
 
             // Cache
-            val cache_name = "Seeder_61008" + _primeKey
+            val cache_name = "Seeder_61009" + _primeKey
 
             val cacher = new CacheManager(conf = _conf, expire = cache_time)
             val cacheData = cacher.cacheData(cache_name)
@@ -128,28 +129,13 @@ final class Seeder_61010 extends Seeder with ISeeder with Logging {
 
     private def updateCache(cacheManager: CacheManager, cache_name: String): List[Map[String, Any]] ={
 
-        var dataList = List[Map[String, Any]]()
+        val dataList = onDBHandle()
 
-        val data = onDBHandle()
-
-        if (data.size < 1)
+        if (dataList.size < 1)
             throw new EasyException("20100")
         else {
             val cache_data = new EasyOutput
-            cache_data.odata = List[Map[String, Any]]()
-
-            val sortData = data.sortBy(x => x._3)(Ordering.Double.reverse)
-            sortData.slice(0, 15).foreach(x => {
-                var obj = Map[String, Any]()
-
-                val storyId = x._1.reverse.padTo(9, 0).reverse.mkString
-                obj = obj + ("storyid" -> storyId)
-                obj = obj + ("cheadline" -> x._2)
-                obj = obj + ("piclink" -> getStoryPic(storyId))
-                dataList = dataList :+ obj
-
-                cache_data.odata = cache_data.odata :+ obj
-            })
+            cache_data.odata = dataList
             cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
             cacheManager.cacheData(cache_name, cache_data, cache_time)
         }
@@ -169,17 +155,17 @@ final class Seeder_61010 extends Seeder with ISeeder with Logging {
             val other = imgData.odata.filter(x => x.getOrElse("otype", "")  == "Other" || x.getOrElse("otype", "")  == "BigButton")
 
             if(cover.nonEmpty){
-                imgLink = cover.head.getOrElse("olink", "").toString.replaceFirst("/upload", "http://i.ftimg.net")
+                imgLink = Utils.formatRealImgUrl(cover.head.getOrElse("olink", "").toString)
             } else if (other.nonEmpty) {
-                imgLink = other.head.getOrElse("olink", "").toString.replaceFirst("/upload", "http://i.ftimg.net")
+                imgLink = Utils.formatRealImgUrl(other.head.getOrElse("olink", "").toString)
             }
         }
 
         imgLink
     }
 
-    override protected def onDBHandle(): List[(String, String, Double)] = {
-        var dataList = List[(String, String, Double)]()
+    override protected def onDBHandle(): List[Map[String, Any]] = {
+        var dataList = List[Map[String, Any]]()
 
         try {
 
@@ -204,12 +190,16 @@ final class Seeder_61010 extends Seeder with ISeeder with Logging {
                     val iterator = storyArr.iterator()
                     while (iterator.hasNext) {
                         val obj = iterator.next().asInstanceOf[JSONObject]
-                        val s = obj.getString("storyid")
-                        val c = obj.getString("cheadline")
-                        val r = obj.getString("rating")
-
-                        if(_storyId.toInt.toString != s) {
-                            dataList = dataList :+(s, c, r.toDouble)
+                        val storyId = Utils.formatStoryId(obj.getString("storyid"))
+                        val picLink = getStoryPic(storyId)
+                        if(picLink.nonEmpty && storyId != _storyId) {
+                            var tmpMap = Map[String, Any]()
+                            tmpMap = tmpMap + ("storyid" -> storyId)
+                            tmpMap = tmpMap + ("cheadline" -> obj.getString("cheadline"))
+                            tmpMap = tmpMap + ("piclink" -> picLink)
+                            tmpMap = tmpMap + ("rating" -> obj.getString("rating").toDouble)
+                            tmpMap = tmpMap + ("t" -> 1)
+                            dataList = dataList :+ tmpMap
                             storyList.add(obj)
                         }
                     }
@@ -221,7 +211,7 @@ final class Seeder_61010 extends Seeder with ISeeder with Logging {
                     log.info("Records saved to MongoDB " + ret)
                 }
             } else {
-                throw new EasyException("20100")
+                //throw new EasyException("20100")
             }
 
             // close
