@@ -3,6 +3,7 @@ package com.ftchinese.workers
 import java.util.concurrent.TimeUnit
 
 import com.alibaba.fastjson.{JSON, JSONObject}
+import com.ftchinese.utils.Utils
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.MongoDriver
 import com.wanbo.easyapi.server.lib._
@@ -60,6 +61,9 @@ final class Seeder_61009 extends Seeder with ISeeder {
             } else
                 _primeKey = uuId
 
+            if(seed.contains("isUpdateCache") && seed.getOrElse("isUpdateCache", "") == "isUpdateCache")
+                isUpdateCache = true
+
             // Cache
             val cache_name = this.getClass.getSimpleName + _primeKey
 
@@ -71,23 +75,10 @@ final class Seeder_61009 extends Seeder with ISeeder {
                 fruits.oelement = fruits.oelement + ("fromcache" -> "true") + ("ttl" -> cacher.ttl.toString)
             } else {
 
-                val data = onDBHandle()
+                val dataList = onDBHandle()
 
                 val cache_data = new EasyOutput
-                cache_data.odata = List[Map[String, Any]]()
-
-                val sortData = data.sortBy(x => x._3)(Ordering.Double.reverse)
-                sortData.slice(0, 15).foreach(x => {
-                    var obj = Map[String, Any]()
-
-                    val storyId = x._1.reverse.padTo(9, 0).reverse.mkString
-                    obj = obj + ("storyid" -> storyId)
-                    obj = obj + ("cheadline" -> x._2)
-                    obj = obj + ("piclink" -> getStoryPic(storyId))
-                    dataList = dataList :+ obj
-
-                    cache_data.odata = cache_data.odata :+ obj
-                })
+                cache_data.odata = dataList
                 cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
                 cacher.cacheData(cache_name, cache_data, cache_time)
 
@@ -118,17 +109,17 @@ final class Seeder_61009 extends Seeder with ISeeder {
             val other = imgData.odata.filter(x => x.getOrElse("otype", "")  == "Other" || x.getOrElse("otype", "")  == "BigButton")
 
             if(cover.nonEmpty){
-                imgLink = cover.head.getOrElse("olink", "").toString.replaceFirst("/upload", "http://i.ftimg.net")
+                imgLink = Utils.formatRealImgUrl(cover.head.getOrElse("olink", "").toString)
             } else if (other.nonEmpty) {
-                imgLink = other.head.getOrElse("olink", "").toString.replaceFirst("/upload", "http://i.ftimg.net")
+                imgLink = Utils.formatRealImgUrl(other.head.getOrElse("olink", "").toString)
             }
         }
 
         imgLink
     }
 
-    override protected def onDBHandle(): List[(String, String, Double)] = {
-        var dataList = List[(String, String, Double)]()
+    override protected def onDBHandle(): List[Map[String, Any]] = {
+        var dataList = List[Map[String, Any]]()
 
         try {
 
@@ -149,16 +140,23 @@ final class Seeder_61009 extends Seeder with ISeeder {
 
                     val iterator = storyArr.iterator()
                     while (iterator.hasNext) {
-                        val obj = iterator.next().asInstanceOf[JSONObject]
-                        val s = obj.getString("storyid")
-                        val c = obj.getString("cheadline")
-                        val r = obj.getString("rating")
 
-                        dataList = dataList :+ (s, c , r.toDouble)
+                        val obj = iterator.next().asInstanceOf[JSONObject]
+                        val storyId = Utils.formatStoryId(obj.getString("storyid"))
+                        val picLink = getStoryPic(storyId)
+                        if(picLink.nonEmpty) {
+                            var tmpMap = Map[String, Any]()
+                            tmpMap = tmpMap + ("storyid" -> obj.getString("storyid"))
+                            tmpMap = tmpMap + ("cheadline" -> obj.getString("cheadline"))
+                            tmpMap = tmpMap + ("piclink" -> picLink)
+                            tmpMap = tmpMap + ("rating" -> obj.getString("rating").toDouble)
+                            tmpMap = tmpMap + ("t" -> 1)
+                            dataList = dataList :+ tmpMap
+                        }
                     }
                 })
             } else {
-                throw new EasyException("20100")
+                //throw new EasyException("20100")
             }
 
             // close
