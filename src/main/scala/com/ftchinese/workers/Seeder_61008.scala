@@ -3,6 +3,7 @@ package com.ftchinese.workers
 import java.util.concurrent.TimeUnit
 
 import com.alibaba.fastjson.{JSON, JSONObject}
+import com.ftchinese.utils.Utils
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.MongoDriver
 import com.wanbo.easyapi.server.lib._
@@ -24,7 +25,7 @@ final class Seeder_61008 extends Seeder with ISeeder {
 
     private var _primeKey = ""
 
-    private val cache_time = 3600
+    private val cache_time = 30
 
     private val log = LoggerFactory.getLogger(classOf[Seeder_61008])
 
@@ -39,17 +40,9 @@ final class Seeder_61008 extends Seeder with ISeeder {
             val uuId = seed.getOrElse("uuid", "").toString
             val cookieId = seed.getOrElse("cookieid", "").toString
 
-            if (uuId == "" && cookieId == ""){
-                log.info("The user information was empty, redirecting to 61006.")
-                val hotData = manager.transform("61006", Map[String, Any]())
-                fruits.oelement = hotData.oelement
-                fruits.odata = hotData.odata
-                log.info(hotData.oelement.get("errorcode").get)
-                throw new EasyException(hotData.oelement.get("errorcode").get)
-            }
-
-            if (uuId == "") {
-
+            if(uuId == "" && cookieId == ""){
+                _primeKey = ""
+            } else if(uuId == ""){
                 // Get uuid By cookieId.
                 val uidData = manager.transform("61001", Map("cookieid" -> cookieId))
 
@@ -62,8 +55,11 @@ final class Seeder_61008 extends Seeder with ISeeder {
                 } else {
                     _primeKey = cookieId
                 }
-            } else
+            } else {
                 _primeKey = uuId
+            }
+
+
 
             // Cache
             val cache_name = this.getClass.getSimpleName + _primeKey
@@ -76,23 +72,46 @@ final class Seeder_61008 extends Seeder with ISeeder {
                 fruits.oelement = fruits.oelement + ("fromcache" -> "true") + ("ttl" -> cacher.ttl.toString)
             } else {
 
-                val data = onDBHandle()
+                var uniqueIds = Set[String]()
+
+                val data_61008 = onDBHandle()
+                var distinct_61008 = List[Map[String, Any]]()
+
+                data_61008.foreach(x => {
+                    x.get("storyid").foreach(id => {
+                        if(!uniqueIds.contains(id.toString)){
+                            distinct_61008 = distinct_61008 :+ x
+                            uniqueIds = uniqueIds + id.toString
+                        }
+                    })
+                })
+
+
+                val hotData = manager.transform("61006", Map[String, Any]())
+
+                val data_61006 = hotData.odata
+
+                var distinct_61006 = List[Map[String, Any]]()
+                data_61006.foreach(x => {
+                    x.get("storyid").foreach(id => {
+                        if(!uniqueIds.contains(id.toString)){
+                            distinct_61006 = distinct_61006 :+ x.updated("t", 2)
+                            uniqueIds = uniqueIds + id.toString
+                        }
+                    })
+                })
+
+                // Mix all the distinct data into a new List.
+                val mixedData = List(distinct_61008, distinct_61006)
+
+                val regular = List(7, 3)
+
+
+                dataList = Utils.dataBalance[Map[String, Any]](mixedData, regular)
+
 
                 val cache_data = new EasyOutput
-                cache_data.odata = List[Map[String, Any]]()
-
-                val sortData = data.sortBy(x => x._3)(Ordering.Double.reverse)
-                sortData.slice(0, 15).foreach(x => {
-                    var obj = Map[String, Any]()
-
-                    val storyId = x._1.reverse.padTo(9, 0).reverse.mkString
-                    obj = obj + ("storyid" -> storyId)
-                    obj = obj + ("cheadline" -> x._2)
-                    obj = obj + ("piclink" -> getStoryPic(storyId))
-                    dataList = dataList :+ obj
-
-                    cache_data.odata = cache_data.odata :+ obj
-                })
+                cache_data.odata = dataList
                 cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
                 cacher.cacheData(cache_name, cache_data, cache_time)
 
@@ -123,17 +142,17 @@ final class Seeder_61008 extends Seeder with ISeeder {
             val other = imgData.odata.filter(x => x.getOrElse("otype", "")  == "Other" || x.getOrElse("otype", "")  == "BigButton")
 
             if(cover.nonEmpty){
-                imgLink = cover.head.getOrElse("olink", "").toString.replaceFirst("/upload", "http://i.ftimg.net")
+                imgLink = Utils.formatRealImgUrl(cover.head.getOrElse("olink", "").toString)
             } else if (other.nonEmpty) {
-                imgLink = other.head.getOrElse("olink", "").toString.replaceFirst("/upload", "http://i.ftimg.net")
+                imgLink = Utils.formatRealImgUrl(other.head.getOrElse("olink", "").toString)
             }
         }
 
         imgLink
     }
 
-    override protected def onDBHandle(): List[(String, String, Double)] = {
-        var dataList = List[(String, String, Double)]()
+    override protected def onDBHandle(): List[Map[String, Any]] = {
+        var dataList = List[Map[String, Any]]()
 
         try {
 
@@ -154,16 +173,23 @@ final class Seeder_61008 extends Seeder with ISeeder {
 
                     val iterator = storyArr.iterator()
                     while (iterator.hasNext) {
-                        val obj = iterator.next().asInstanceOf[JSONObject]
-                        val s = obj.getString("storyid")
-                        val c = obj.getString("cheadline")
-                        val r = obj.getString("rating")
 
-                        dataList = dataList :+ (s, c , r.toDouble)
+                        val obj = iterator.next().asInstanceOf[JSONObject]
+                        val storyId = Utils.formatStoryId(obj.getString("storyid"))
+                        val picLink = getStoryPic(storyId)
+                        if(picLink.nonEmpty) {
+                            var tmpMap = Map[String, Any]()
+                            tmpMap = tmpMap + ("storyid" -> obj.getString("storyid"))
+                            tmpMap = tmpMap + ("cheadline" -> obj.getString("cheadline"))
+                            tmpMap = tmpMap + ("piclink" -> picLink)
+                            tmpMap = tmpMap + ("rating" -> obj.getString("rating").toDouble)
+                            tmpMap = tmpMap + ("t" -> 1)
+                            dataList = dataList :+ tmpMap
+                        }
                     }
                 })
             } else {
-                throw new EasyException("20100")
+                //throw new EasyException("20100")
             }
 
             // close
