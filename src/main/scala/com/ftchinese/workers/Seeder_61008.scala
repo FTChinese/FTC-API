@@ -103,6 +103,8 @@ final class Seeder_61008 extends Seeder with ISeeder {
 
                 dataList = Utils.dataBalance[Map[String, Any]](mixedData, regular)
 
+                if(dataList.isEmpty)
+                    throw new EasyException("20100")
 
                 val cache_data = new EasyOutput
                 cache_data.odata = dataList
