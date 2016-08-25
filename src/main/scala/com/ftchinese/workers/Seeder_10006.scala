@@ -39,6 +39,7 @@ final class Seeder_10006 extends Seeder with ISeeder {
                 throw new EasyException("20001")
 
             // Cache
+            // @todo Split batch ids into single id cache. It's good for cache sharing, reducing duplicate id cache in different cache files.
             val cache_name = this.getClass.getSimpleName + _storyIds
 
             val cacher = new CacheManager(conf = _conf, expire = 432000) // 5 days
