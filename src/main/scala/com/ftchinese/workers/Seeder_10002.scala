@@ -1,5 +1,6 @@
 package com.ftchinese.workers
 
+import com.ftchinese.utils.Utils
 import com.wanbo.easyapi.server.cache.CacheManager
 import com.wanbo.easyapi.server.database.MysqlDriver
 import com.wanbo.easyapi.server.lib.{EasyException, EasyOutput, ISeeder, Seeder}
@@ -76,26 +77,16 @@ final class Seeder_10002 extends Seeder with ISeeder {
                 else {
                     val cache_data = new EasyOutput
 
-                    if(_withPic){
-                        val sIds = dataList.map(_.getOrElse("id", "").toString).filter(_!="").mkString(",")
-                        val picData = manager.transform("10006", Map(("storyid", sIds)))
+                    if(_withPic) {
 
-                        if(picData.oelement.get("errorcode").get == "0"){
-                            dataList = dataList.map(x => {
-                                val tmpId = x.getOrElse("id", "")
-                                var picMap = Map[String, String]()
-                                picData.odata.foreach(y => {
-                                    if(y.getOrElse("ostoryid", "") == tmpId){
-                                        val otype = y.getOrElse("otype", "").toString.toLowerCase
-                                        if(otype == "other")
-                                            picMap += "smallbutton" -> y.getOrElse("olink", "").toString
-                                        else
-                                            picMap += otype -> y.getOrElse("olink", "").toString
-                                    }
-                                })
-                                x updated("story_pic", picMap)
-                            })
-                        }
+                        dataList = dataList.map(x => {
+                            val picLink = x.get("storyid").map(y => getStoryPic(y.toString)).getOrElse("")
+                            if (picLink.nonEmpty)
+                                x updated("piclink", picLink)
+                            else
+                                null
+                        }).filter(_ != null)
+
                     }
 
                     cache_data.odata = dataList
@@ -119,6 +110,26 @@ final class Seeder_10002 extends Seeder with ISeeder {
 
         fruits
     }
+
+    private def getStoryPic(storyId: String): String ={
+        var imgLink = ""
+
+        val imgData = manager.transform("10006", Map("storyid" -> storyId))
+
+        if (imgData.oelement.get("errorcode").get == "0") {
+            val cover = imgData.odata.filter(x => x.getOrElse("otype", "")  == "Cover")
+            val other = imgData.odata.filter(x => x.getOrElse("otype", "")  == "Other" || x.getOrElse("otype", "")  == "BigButton")
+
+            if(cover.nonEmpty){
+                imgLink = Utils.formatRealImgUrl(cover.head.getOrElse("olink", "").toString)
+            } else if (other.nonEmpty) {
+                imgLink = Utils.formatRealImgUrl(other.head.getOrElse("olink", "").toString)
+            }
+        }
+
+        imgLink
+    }
+
     override protected def onDBHandle(): List[Map[String, String]] = {
         var dataList = List[Map[String, String]]()
 
@@ -152,8 +163,10 @@ final class Seeder_10002 extends Seeder with ISeeder {
                 }
             } else {
                 while (rs.next()) {
+                    val storyId = rs.getString(1)
                     var tmpMap = Map[String, String]()
-                    tmpMap = tmpMap + ("id" -> rs.getString(1))
+                    tmpMap = tmpMap + ("id" -> storyId)
+                    tmpMap = tmpMap + ("storyid" -> storyId)
                     tmpMap = tmpMap + ("cheadline" -> rs.getString(2))
                     tmpMap = tmpMap + ("cauthor" -> rs.getString(3))
 
