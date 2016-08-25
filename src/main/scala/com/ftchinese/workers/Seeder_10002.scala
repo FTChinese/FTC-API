@@ -17,6 +17,7 @@ final class Seeder_10002 extends Seeder with ISeeder {
 
     private var _idSet: Set[String] = Set()
     private var _type: String = "info"
+    private var _withPic: Boolean = false
 
     private val cache_time = 86400
 
@@ -27,6 +28,8 @@ final class Seeder_10002 extends Seeder with ISeeder {
         var dataList = List[Map[String, Any]]()
 
         try {
+            val startRunTime = System.currentTimeMillis()
+
             val storyIdStr: String = seed.getOrElse("storyid", "").toString
 
             val storyArr = storyIdStr.split(",")
@@ -48,8 +51,14 @@ final class Seeder_10002 extends Seeder with ISeeder {
                 _type = "all"
             }
 
+            val withPicStr: String = seed.getOrElse("withpic", "0").toString
+
+            if(withPicStr == "1"){
+                _withPic = true
+            }
+
             // Cache
-            val cache_name = this.getClass.getSimpleName + _idSet.hashCode() + _type
+            val cache_name = this.getClass.getSimpleName + _idSet.hashCode() + _type + _withPic
 
             val cacher = new CacheManager(conf = _conf, expire = cache_time)
 
@@ -66,6 +75,29 @@ final class Seeder_10002 extends Seeder with ISeeder {
                     throw new EasyException("20100")
                 else {
                     val cache_data = new EasyOutput
+
+                    if(_withPic){
+                        val sIds = dataList.map(_.getOrElse("id", "").toString).filter(_!="").mkString(",")
+                        val picData = manager.transform("10006", Map(("storyid", sIds)))
+
+                        if(picData.oelement.get("errorcode").get == "0"){
+                            dataList = dataList.map(x => {
+                                val tmpId = x.getOrElse("id", "")
+                                var picMap = Map[String, String]()
+                                picData.odata.foreach(y => {
+                                    if(y.getOrElse("ostoryid", "") == tmpId){
+                                        val otype = y.getOrElse("otype", "").toString.toLowerCase
+                                        if(otype == "other")
+                                            picMap += "smallbutton" -> y.getOrElse("olink", "").toString
+                                        else
+                                            picMap += otype -> y.getOrElse("olink", "").toString
+                                    }
+                                })
+                                x updated("story_pic", picMap)
+                            })
+                        }
+                    }
+
                     cache_data.odata = dataList
 
                     cache_data.oelement = cache_data.oelement.updated("errorcode", "0")
@@ -74,7 +106,7 @@ final class Seeder_10002 extends Seeder with ISeeder {
             }
             cacher.close()
 
-            fruits.oelement = fruits.oelement.updated("errorcode", "0")
+            fruits.oelement = fruits.oelement.updated("errorcode", "0").+("duration" -> (System.currentTimeMillis() - startRunTime).toString)
             fruits.odata = dataList
         } catch {
             case ee: EasyException =>
