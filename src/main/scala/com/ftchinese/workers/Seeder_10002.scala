@@ -16,7 +16,7 @@ final class Seeder_10002 extends Seeder with ISeeder {
 
     driver = new MysqlDriver
 
-    private var _idSet: Set[String] = Set()
+    private var _idSet: Seq[String] = Seq()
     private var _type: String = "info"
     private var _withPic: Boolean = false
 
@@ -33,13 +33,10 @@ final class Seeder_10002 extends Seeder with ISeeder {
 
             val storyIdStr: String = seed.getOrElse("storyid", "").toString
 
-            val storyArr = storyIdStr.split(",")
+            val storyArr = storyIdStr.split(",").map(_.trim)
 
             if(storyArr.nonEmpty) {
-                storyArr.foreach(x => {
-                    if(x != "" && x.forall(_.isDigit))
-                        _idSet += x
-                })
+                _idSet = storyArr.filter(x => x != "" && x.forall(_.isDigit)).distinct.toSeq
             } else {
                 throw new EasyException("20001")
             }
@@ -145,7 +142,9 @@ final class Seeder_10002 extends Seeder with ISeeder {
                 case _ => // Ignore
             }
 
-            val sql = "SELECT %s FROM story where `publish_status` = 'publish' and id in (%s)".format(fields.mkString(","), _idSet.mkString("'", "','", "'"))
+            val idsStr = _idSet.mkString("'", "','", "'")
+
+            val sql = "SELECT %s FROM story where `publish_status` = 'publish' and id in (%s) order by field(id, %s)".format(fields.mkString(","), idsStr, idsStr)
 
             val ps = conn.prepareStatement(sql)
             val rs = ps.executeQuery()
