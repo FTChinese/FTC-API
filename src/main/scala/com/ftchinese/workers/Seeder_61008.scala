@@ -18,6 +18,8 @@ final class Seeder_61008 extends Seeder with ISeeder {
 
     private var _primeKey = ""
 
+    private var _storyId = ""
+
     private val cache_time = 10
 
     private val log = LoggerFactory.getLogger(classOf[Seeder_61008])
@@ -52,7 +54,11 @@ final class Seeder_61008 extends Seeder with ISeeder {
                 _primeKey = uuId
             }
 
+            val storyId: String = seed.getOrElse("storyid", "").toString.trim
 
+            if(storyId != "" || storyId.forall(_.isDigit)) {
+                _storyId = storyId
+            }
 
             // Cache
             val cache_name = this.getClass.getSimpleName + _primeKey
@@ -66,6 +72,25 @@ final class Seeder_61008 extends Seeder with ISeeder {
             } else {
 
                 var uniqueIds = Set[String]()
+
+                var distinct_61007 = List[Map[String, Any]]()
+                if(_storyId != ""){
+
+                    uniqueIds = uniqueIds + _storyId
+
+                    val relatedData = manager.transform("61007", Map[String, String]("storyid" -> _storyId))
+
+                    val data_61007 = relatedData.odata
+
+                    data_61007.foreach(x => {
+                        x.get("storyid").foreach(id => {
+                            if(!uniqueIds.contains(id.toString)){
+                                distinct_61007 = distinct_61007 :+ x.updated("t", 3)
+                                uniqueIds = uniqueIds + id.toString
+                            }
+                        })
+                    })
+                }
 
                 val alsData = manager.transform("61009", seed)
                 val data_61009 = alsData.odata
@@ -95,10 +120,17 @@ final class Seeder_61008 extends Seeder with ISeeder {
                     })
                 })
 
-                // Mix all the distinct data into a new List.
-                val mixedData = List(distinct_61009, distinct_61006)
 
-                val regular = List(7, 3)
+                // Mix all the distinct data into a new List.
+                var mixedData = List[List[Map[String, Any]]]()
+                var regular = List[Int]()
+                if(distinct_61007.nonEmpty){
+                    mixedData = List(distinct_61007, distinct_61009, distinct_61006)
+                    regular = List(2, 4, 2)
+                } else {
+                    mixedData = List(distinct_61009, distinct_61006)
+                    regular = List(5, 3)
+                }
 
 
                 dataList = Utils.dataBalance[Map[String, Any]](mixedData, regular)
